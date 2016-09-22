@@ -13,14 +13,15 @@ RUN apt-get update && apt-get install -y \
     supervisor
 
 # Setup application
-COPY . /app/
+COPY requirements.txt /app/
 RUN virtualenv /var/venv && /var/venv/bin/pip install -r /app/requirements.txt
 
+COPY . /app/
 COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/docker-entry.sh /docker-entry.sh
 RUN mkdir -p /var/lib/celery && useradd celery && chown celery:celery /var/lib/celery/
 
-ENV DATABASE_URL="sqlite:////var/app/db.sqlite3"
+ENV DATABASE_URL="sqlite:////app/db.sqlite3"
 
 EXPOSE 80
 
