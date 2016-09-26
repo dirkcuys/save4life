@@ -6,4 +6,4 @@ class TestUssdApi(TestCase):
     def test_get_user_info(self):
         c = Client()
         resp = c.get('/ussd/user_registration/278312345678/')
-        self.assertEquals(resp.json(), {"msisdn": u"278312345678", "ussd_user_isnone": True})
+        self.assertEquals(resp.json(), {"msisdn": u"278312345678"})

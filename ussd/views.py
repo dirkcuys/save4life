@@ -29,8 +29,9 @@ class UssdRegistrationView(View):
         ussd_user = self.get_object()
         data = {
             'msisdn': self.kwargs.get('msisdn'),
-            'ussd_user_isnone': ussd_user is None
         }
+        if ussd_user:
+            data.update(ussd_user.to_dict())
         return http.JsonResponse(data)
 
 
