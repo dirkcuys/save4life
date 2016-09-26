@@ -18,5 +18,6 @@ class UssdUser(models.Model):
             'msisdn': self.msisdn,
             'name': self.name,
             'goal_item': self.goal_item,
-            'goal_amount': self.goal_amount
+            'goal_amount': self.goal_amount,
+            'balance': 0
         }

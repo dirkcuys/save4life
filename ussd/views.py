@@ -55,7 +55,7 @@ class UssdRegistrationView(View):
         # if registration was just completed, send welcome sms
         is_complete = ussd_user.name and ussd_user.goal_item and ussd_user.goal_amount
         if not was_complete and is_complete:
-            send_welcome_sms.delay(uss_user.msisdn)
+            send_welcome_sms.delay(ussd_user.msisdn)
 
         return http.JsonResponse(ussd_user.to_dict())
 
