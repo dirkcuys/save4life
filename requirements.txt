@@ -1,7 +1,13 @@
 Django==1.10.1
+amqp==1.4.9
+anyjson==0.3.3
 argparse==1.2.1
-wsgiref==0.1.2
+billiard==3.3.0.23
+celery==3.1.18
 dj-database-url==0.3.0
 gunicorn==19.3.0
-celery==3.1.18
+kombu==3.0.35
 psycopg2==2.6
+pytz==2016.6.1
+wsgiref==0.1.2
+requests==2.11.1

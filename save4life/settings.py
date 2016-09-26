@@ -128,3 +128,6 @@ STATIC_ROOT = path('static_serve')
 
 ####### Celery config #######
 BROKER_URL = os.environ.get('BROKER_URL', 'amqp://guest:guest@localhost//')
+
+# Url to Junebug channel for sending SMSes
+JUNEBUG_SMS_URL = os.environ.get('JUNEBUG_SMS_URL', 'http://locahost/');
