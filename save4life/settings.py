@@ -125,3 +125,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = path('static_serve')
+
+####### Celery config #######
+BROKER_URL = os.environ.get('BROKER_URL', 'amqp://guest:guest@localhost//')
