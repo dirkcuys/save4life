@@ -6,6 +6,9 @@ MAINTAINER Dirk Uys <dirkcuys@gmail.com>
 RUN apt-get update && apt-get install -y \
     git-core \
     libpq-dev \
+    libffi-dev \
+    libxml2-dev \
+    libxslt1-dev \
     postgresql-client \
     python \
     python-dev \

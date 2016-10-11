@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.db.models import Sum
+from django.db.models import Q
 
 # Create your models here.
 
@@ -36,7 +37,10 @@ class UssdUser(models.Model):
         ])
 
     def balance(self):
-        return self.transaction_set.all().aggregate(Sum('amount')).get('amount__sum', 0) or 0
+        return self.transaction_set\
+                .filter(Q(action=Transaction.SAVING) | Q(action=Transaction.WITHDRAWAL))\
+                .aggregate(Sum('amount'))\
+                .get('amount__sum', 0) or 0
 
     def __unicode__(self):
         return u"UssdUser <{0}>".format(self.name)
@@ -54,6 +58,15 @@ class Voucher(models.Model):
 
     def __unicode__(self):
         return u'Voucher <R{0}>'.format(self.amount)
+
+
+def generate_voucher(amount, distributor):
+    import string, random
+    code = "".join([random.choice(string.digits) for i in range(16)])
+    while Voucher.objects.filter(code=code).count() > 0:
+        code = "".join([random.choice(string.digits) for i in range(16)])
+    return Voucher.objects.create(code=code, amount=amount, distributor=distributor)
+
 
 
 class Transaction(models.Model):

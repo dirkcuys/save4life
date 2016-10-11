@@ -107,10 +107,10 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 10 
         }
-        with patch('ussd.views.fakepi') as airtime_api:
+        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
-            self.assertTrue(airtime_api.called)
+            self.assertTrue(issue_airtime.called)
 
         # test that user received savings
         resp = c.get('/ussd/user_registration/27831112222/')
@@ -121,30 +121,9 @@ class TestUssdApi(TestCase):
         resp = c.post('/ussd/voucher/verify/', data=json.dumps(data), content_type='application/json')
         self.assertEquals(resp.json().get('status'), 'used')
 
-
-    def test_voucher_redeem_api_failure(self):
-        c = Client()
-
-        # create user 
-        user = UssdUser.objects.create(msisdn='27831112222', name=u'Spongebob', goal_item=u'Airtime', goal_amount=50)
-                
-        # create a voucher
-        voucher = Voucher.objects.create(code='1234567890123456', amount=100)
-
-        # redeem voucher
-        data = {
-            "msisdn": "27831112222",
-            "voucher_code": "1234567890123456",
-            "savings_amount": 20 
-        }
-        with patch('ussd.views.fakepi') as airtime_api:
-            resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
-                    content_type='application/json')
-            self.assertTrue(airtime_api.called)
-
-        #TODO
-        raise Exception('Implement this test')
-
+        # test that voucher redeemed by is set
+        voucher.refresh_from_db()
+        self.assertEquals(voucher.redeemed_by.msisdn, '27831112222')
 
 
     def test_voucher_save_whole_voucher(self):
@@ -160,10 +139,10 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 100 
         }
-        with patch('ussd.views.fakepi') as airtime_api:
+        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
-            self.assertTrue(airtime_api.called)
+            self.assertTrue(issue_airtime.called)
 
         # test that user received savings
         resp = c.get('/ussd/user_registration/27831112222/')
@@ -183,10 +162,10 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 0 
         }
-        with patch('ussd.views.fakepi') as airtime_api:
+        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
-            self.assertTrue(airtime_api.called)
+            self.assertTrue(issue_airtime.called)
 
         # test that user received savings
         resp = c.get('/ussd/user_registration/27831112222/')
@@ -206,10 +185,10 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 200 
         }
-        with patch('ussd.views.fakepi') as airtime_api:
+        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
-            self.assertFalse(airtime_api.called)
+            self.assertFalse(issue_airtime.called)
             self.assertEqual(resp.json().get('status'), 'invalid') 
 
         # test that user received savings
@@ -230,10 +209,10 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": -20 
         }
-        with patch('ussd.views.fakepi') as airtime_api:
+        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
-            self.assertFalse(airtime_api.called)
+            self.assertFalse(issue_airtime.called)
             self.assertEqual(resp.json().get('status'), 'invalid') 
 
         # test that user received savings

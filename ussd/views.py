@@ -10,6 +10,7 @@ from .models import UssdUser
 from .models import Voucher
 from .models import Transaction
 from .tasks import send_welcome_sms
+from .tasks import issue_airtime
 
 # Create your views here.
 class UssdRegistrationView(View):
@@ -109,9 +110,6 @@ class VoucherVerifyView(View):
         return http.JsonResponse(voucher_data)
 
 
-def fakepi(some_argument):
-    this = 'does not do anything'
-
 class VoucherRedeemView(View):
 
     @method_decorator(csrf_exempt)
@@ -142,19 +140,20 @@ class VoucherRedeemView(View):
         voucher = self.get_voucher()
 
         if user is None or voucher is None:
-            return http.JsonResponse({"status": "invalid"})
+            return http.JsonResponse({"status": "invalid"}) #TODO make errors consistent
 
         # make sure voucher wasn't already redeemed or revoked!!
         if voucher.redeemed_at or voucher.revoked_at:
-            return http.JsonResponse({"status": "invalid"})
+            return http.JsonResponse({"status": "invalid"}) #TODO make errors consistent
 
         json_data = json.loads(self.request.body)
         savings_amount = json_data.get("savings_amount")
         # verify that savings amount is valid
         if savings_amount > voucher.amount or savings_amount < 0:
-            return http.JsonResponse({"status": "invalid"})
+            return http.JsonResponse({"status": "invalid"}) #TODO make errors consistent
 
         voucher.redeemed_at = datetime.utcnow()
+        voucher.redeemed_by = user
         voucher.save()
 
         # Credit user balance with savings amount
@@ -162,10 +161,11 @@ class VoucherRedeemView(View):
                 user=user,
                 action=Transaction.SAVING,
                 amount=savings_amount,
-                reference_code='savings', #TODO should this be a reference from the airtime API?
+                reference_code='savings',
                 voucher=voucher
         )
-        # Credit airtime with remainder - call external API
 
-        fakepi('show me the money') #TODO
+        # Credit airtime with remainder - call external API
+        issue_airtime.delay(voucher)
+
         return http.JsonResponse({"status": "success"})

@@ -130,4 +130,10 @@ STATIC_ROOT = path('static_serve')
 BROKER_URL = os.environ.get('BROKER_URL', 'amqp://guest:guest@localhost//')
 
 # Url to Junebug channel for sending SMSes
-JUNEBUG_SMS_URL = os.environ.get('JUNEBUG_SMS_URL', 'http://locahost/');
+JUNEBUG_SMS_URL = os.environ.get('JUNEBUG_SMS_URL', 'http://locahost/')
+
+# Airtime API credentials
+AIRTIME_WSDL_URL = os.environ.get('AIRTIME_WSDL_URL')
+AIRTIME_TERMINAL_NUMBER = os.environ.get('AIRTIME_TERMINAL_NUMBER')
+AIRTIME_MSISDN = os.environ.get('AIRTIME_MSISDN')
+AIRTIME_PIN = os.environ.get('AIRTIME_PIN')
