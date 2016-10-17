@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.db.models import Sum
-from django.db.models import Q
+from django.db.models import Q, F
 
 # Create your models here.
 
@@ -94,6 +94,7 @@ class Transaction(models.Model):
 
 class Quiz(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
+    publish_at = models.DateTimeField()
     ends_at = models.DateTimeField()
 
     def to_dict(self):
@@ -102,6 +103,11 @@ class Quiz(models.Model):
             'questions': [q.to_dict() for q in self.question_set.all().order_by('id')]
         }
         return data
+
+    def mark_quiz(self, user):
+        complete = Answer.objects.filter(user=user, question__quiz=self).count()
+        correct = Answer.objects.filter(user=user, question__quiz=self, user_response=F('question__solution')).count()
+        return (correct, complete)
 
 
 class Question(models.Model):
@@ -126,6 +132,6 @@ class Answer(models.Model):
     question = models.ForeignKey(Question)
     user = models.ForeignKey(UssdUser)
     created_at = models.DateTimeField(auto_now_add=True)
-    user_response = models.CharField(max_length=1)
+    user_response = models.IntegerField()
 
     #TODO set user and question as unique together
