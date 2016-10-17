@@ -217,5 +217,7 @@ class TestUssdApi(TestCase):
 
         # test that user received savings
         resp = c.get('/ussd/user_registration/27831112222/')
-        self.assertEquals(resp.json().get("balance"), 0)
+        self.assertEquals(resp.json().get('balance'), 0)
+
+
 

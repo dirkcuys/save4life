@@ -90,3 +90,42 @@ class Transaction(models.Model):
 
     def __unicode__(self):
         return u'Transaction <{0}: R{1}>'.format(self.action, self.amount)
+
+
+class Quiz(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    ends_at = models.DateTimeField()
+
+    def to_dict(self):
+        data = {
+            'quiz_id': self.pk,
+            'questions': [q.to_dict() for q in self.question_set.all().order_by('id')]
+        }
+        return data
+
+
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz)
+    question = models.CharField(max_length=128)
+    options = models.CharField(max_length=128)
+    reinforce_text = models.CharField(max_length=128)
+    solution = models.IntegerField()
+
+    def to_dict(self):
+        data = {
+            'question': self.question,
+            'options': self.options.split(',')
+        }
+        return data
+
+    def answer_text(self):
+        return self.options.split(',')[self.solution] 
+
+
+class Answer(models.Model):
+    question = models.ForeignKey(Question)
+    user = models.ForeignKey(UssdUser)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user_response = models.CharField(max_length=1)
+
+    #TODO set user and question as unique together

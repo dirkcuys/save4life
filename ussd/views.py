@@ -1,7 +1,9 @@
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.detail import SingleObjectMixin
 from django.utils.decorators import method_decorator
 from django import http
+from django.utils import timezone
 
 import json
 from datetime import datetime
@@ -9,8 +11,27 @@ from datetime import datetime
 from .models import UssdUser
 from .models import Voucher
 from .models import Transaction
+from .models import Quiz, Question, Answer
 from .tasks import send_welcome_sms
 from .tasks import issue_airtime
+
+
+class UssdUserMixin(object):
+
+    def get_user(self):
+        msisdn = ''
+        if self.request.method == 'GET':
+            msisdn = self.request.GET.get('msisdn')
+        else:
+            json_data = json.loads(self.request.body)
+            msisdn = json_data.get('msisdn')
+        queryset = UssdUser.objects.filter(msisdn=msisdn)
+        if queryset.count() == 1:
+            return queryset.get()
+        else:
+            #TODO should we raise a 404?
+            return None
+
 
 # Create your views here.
 class UssdRegistrationView(View):
@@ -64,21 +85,11 @@ class UssdRegistrationView(View):
         return http.JsonResponse(ussd_user.to_dict())
 
 
-class VoucherVerifyView(View):
+class VoucherVerifyView(View, UssdUserMixin):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super(VoucherVerifyView, self).dispatch(*args, **kwargs)
-
-
-    def get_user(self):
-        json_data = json.loads(self.request.body)
-        msisdn = json_data.get('msisdn')
-        queryset = UssdUser.objects.filter(msisdn=msisdn)
-        if queryset.count() == 1:
-            return queryset.get()
-        else:
-            return None
 
 
     def get_voucher(self):
@@ -110,21 +121,11 @@ class VoucherVerifyView(View):
         return http.JsonResponse(voucher_data)
 
 
-class VoucherRedeemView(View):
+class VoucherRedeemView(View, UssdUserMixin):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super(VoucherRedeemView, self).dispatch(*args, **kwargs)
-
-
-    def get_user(self):
-        json_data = json.loads(self.request.body)
-        msisdn = json_data.get('msisdn')
-        queryset = UssdUser.objects.filter(msisdn=msisdn)
-        if queryset.count() == 1:
-            return queryset.get()
-        else:
-            return None
 
 
     def get_voucher(self):
@@ -169,3 +170,64 @@ class VoucherRedeemView(View):
         issue_airtime.delay(voucher)
 
         return http.JsonResponse({"status": "success"})
+
+
+class QuizView(View, UssdUserMixin):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(QuizView, self).dispatch(*args, **kwargs)
+
+
+    def get_active_quiz(self):
+        # Find a quiz with an end date in the future
+        queryset = Quiz.objects.filter(ends_at__gt=timezone.now()).order_by('ends_at')
+        return queryset.first()
+
+
+    def get(self, request, *args, **kwargs):
+        ussd_user = self.get_user()
+        # Get active quiz
+        quiz = self.get_active_quiz()
+        data = {}
+        if quiz:
+            data.update(quiz.to_dict())
+            # get user answers for this quiz to add user_progress field
+            answers = Answer.objects.filter(user=ussd_user, question__quiz=quiz)
+            data.update({'user_progress': answers.count()});
+
+        return http.JsonResponse(data)
+
+
+class AnswerSubmitView(View, SingleObjectMixin, UssdUserMixin):
+
+    pk_url_kwarg = 'quiz_id'
+    model = Quiz
+
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(AnswerSubmitView, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        ussd_user = self.get_user()
+        if ussd_user is None:
+            return http.JsonResponse({'status': 'error', 'reason': 'no user'}) #TODO
+        quiz = self.get_object()
+        question_index = int(self.kwargs.get('question_index')) # TODO 
+        question_query_set = quiz.question_set.all().order_by('id')
+        question = list(question_query_set)[question_index]
+        # check if answer for this question already exists
+        if question.answer_set.filter(user=ussd_user).exists():
+            return http.JsonResponse({'status': 'error'}) #TODO
+        # save answer
+        user_response = json.loads(request.body).get('answer')
+        Answer.objects.create(question=question, user=ussd_user, user_response=user_response)
+        data = {
+            'correct': user_response == question.solution,
+            'answer_text': question.answer_text(),
+            'reinforce_text': question.reinforce_text
+        }
+        return http.JsonResponse(data)
+
+
