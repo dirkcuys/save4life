@@ -135,3 +135,11 @@ class Answer(models.Model):
     user_response = models.IntegerField()
 
     #TODO set user and question as unique together
+
+
+class Message(models.Model):
+    to = models.CharField(max_length=1024) # Store comma seperated list of msisdns
+    body = models.CharField(max_length=160)
+    send_at = models.DateTimeField()
+    sent_at = models.DateTimeField(blank=True, null=True)
+
