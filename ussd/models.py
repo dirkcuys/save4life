@@ -6,9 +6,10 @@ from django.db.models import Q, F
 
 # Create your models here.
 
+
 class UssdUser(models.Model):
-    msisdn = models.CharField(max_length=12, primary_key=True) #TODO validate msisdn
-    network = models.CharField(max_length=32) #TODO restrict to enum
+    msisdn = models.CharField(max_length=12, primary_key=True)  # TODO validate msisdn
+    network = models.CharField(max_length=32)  # TODO restrict to enum
     name = models.CharField(max_length=128)
     goal_item = models.CharField(max_length=128)
     goal_amount = models.IntegerField(null=True, blank=True)
@@ -18,7 +19,7 @@ class UssdUser(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def to_dict(self):
-        # Don't include PIN 
+        # Don't include PIN
         return {
             'msisdn': self.msisdn,
             'name': self.name,
@@ -31,16 +32,16 @@ class UssdUser(models.Model):
 
     def registration_complete(self):
         return all([
-            self.name <> '',
-            self.goal_item <> '',
+            self.name != '',
+            self.goal_item != '',
             self.goal_amount > 0
         ])
 
     def balance(self):
         return self.transaction_set\
-                .filter(Q(action=Transaction.SAVING) | Q(action=Transaction.WITHDRAWAL))\
-                .aggregate(Sum('amount'))\
-                .get('amount__sum', 0) or 0
+            .filter(Q(action=Transaction.SAVING) | Q(action=Transaction.WITHDRAWAL))\
+            .aggregate(Sum('amount'))\
+            .get('amount__sum', 0) or 0
 
     def __unicode__(self):
         return u"UssdUser <{0}>".format(self.name)
@@ -61,12 +62,12 @@ class Voucher(models.Model):
 
 
 def generate_voucher(amount, distributor):
-    import string, random
+    import string
+    import random
     code = "".join([random.choice(string.digits) for i in range(16)])
     while Voucher.objects.filter(code=code).count() > 0:
         code = "".join([random.choice(string.digits) for i in range(16)])
     return Voucher.objects.create(code=code, amount=amount, distributor=distributor)
-
 
 
 class Transaction(models.Model):
@@ -86,7 +87,6 @@ class Transaction(models.Model):
     amount = models.IntegerField()
     reference_code = models.CharField(max_length=32)
     voucher = models.ForeignKey(Voucher, null=True, blank=True)
-
 
     def __unicode__(self):
         return u'Transaction <{0}: R{1}>'.format(self.action, self.amount)
@@ -125,7 +125,7 @@ class Question(models.Model):
         return data
 
     def answer_text(self):
-        return self.options.split(',')[self.solution] 
+        return self.options.split(',')[self.solution]
 
 
 class Answer(models.Model):
@@ -134,11 +134,11 @@ class Answer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user_response = models.IntegerField()
 
-    #TODO set user and question as unique together
+    # TODO set user and question as unique together
 
 
 class Message(models.Model):
-    to = models.CharField(max_length=1024) # Store comma seperated list of msisdns
+    to = models.CharField(max_length=1024)  # Store comma seperated list of msisdns
     body = models.CharField(max_length=160)
     send_at = models.DateTimeField()
     sent_at = models.DateTimeField(blank=True, null=True)
