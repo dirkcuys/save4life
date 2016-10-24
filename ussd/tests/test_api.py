@@ -48,6 +48,9 @@ class TestUssdApi(TestCase):
             resp = c.post('/ussd/user_registration/278312345679/', data=json.dumps(data), content_type='application/json')
             self.assertFalse(send_welcome_sms.called)
 
+        # test that registration bonus was awarded
+        self.assertEquals(resp.json().get('balance'), 5)
+
 
     def test_set_pin(self):
         c = Client()

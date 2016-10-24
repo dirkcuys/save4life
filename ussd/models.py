@@ -4,8 +4,6 @@ from django.db import models
 from django.db.models import Sum
 from django.db.models import Q, F
 
-# Create your models here.
-
 
 class UssdUser(models.Model):
     msisdn = models.CharField(max_length=12, primary_key=True)  # TODO validate msisdn
@@ -39,9 +37,10 @@ class UssdUser(models.Model):
 
     def balance(self):
         return self.transaction_set\
-            .filter(Q(action=Transaction.SAVING) | Q(action=Transaction.WITHDRAWAL))\
+            .exclude(action=Transaction.AIRTIME)\
             .aggregate(Sum('amount'))\
-            .get('amount__sum', 0) or 0
+            .get('amount__sum', 0)\
+            or 0
 
     def __unicode__(self):
         return u"UssdUser <{0}>".format(self.name)
@@ -74,10 +73,14 @@ class Transaction(models.Model):
     SAVING = 'saving'
     WITHDRAWAL = 'withdrawal'
     AIRTIME = 'airtime'
+    REWARD = 'rewards'
+    REGISTRATION_BONUS = 'registration bonus'
     ACTION_TYPES = [
         (SAVING, SAVING),
         (WITHDRAWAL, WITHDRAWAL),
         (AIRTIME, AIRTIME),
+        (REWARD, REWARD),
+        (REGISTRATION_BONUS, REGISTRATION_BONUS),
     ]
 
     user = models.ForeignKey(UssdUser)
@@ -142,4 +145,3 @@ class Message(models.Model):
     body = models.CharField(max_length=160)
     send_at = models.DateTimeField()
     sent_at = models.DateTimeField(blank=True, null=True)
-

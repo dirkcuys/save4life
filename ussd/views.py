@@ -76,7 +76,16 @@ class UssdRegistrationView(View):
         # if registration was just completed, send welcome sms
         is_complete = ussd_user.registration_complete()
         if not was_complete and is_complete:
+            # Award joining bonus
+            Transaction.objects.create(
+                user=ussd_user,
+                action=Transaction.REGISTRATION_BONUS,
+                amount=5,  # TODO store joining bonus somewhere
+                reference_code='joining bonus'
+            )
+            # Send welcome SMS
             send_welcome_sms.delay(ussd_user.msisdn)
+
 
         return http.JsonResponse(ussd_user.to_dict())
 
@@ -145,6 +154,7 @@ class VoucherRedeemView(View, UssdUserMixin):
         if savings_amount > voucher.amount or savings_amount < 0:
             return http.JsonResponse({"status": "invalid"})  # TODO make errors consistent
 
+        # TODO move voucher redeem code somewhere else
         voucher.redeemed_at = datetime.utcnow()
         voucher.redeemed_by = user
         voucher.save()
@@ -176,6 +186,7 @@ class QuizView(View, UssdUserMixin):
             .filter(ends_at__gt=timezone.now())\
             .filter(publish_at__lte=timezone.now())\
             .order_by('ends_at')
+        # TODO Does this need to use utcnow()?
         return queryset.first()
 
     def get(self, request, *args, **kwargs):
