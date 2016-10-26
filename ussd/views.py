@@ -238,3 +238,62 @@ class AnswerSubmitView(View, SingleObjectMixin, UssdUserMixin):
         }
         return http.JsonResponse(data)
 
+
+class PinVerifyView(View, UssdUserMixin):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(PinVerifyView, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_user()
+        if user is None:
+            return http.JsonResponse({'error_code': 403, 'msg': 'user not registered'})
+        json_data = json.loads(self.request.body)
+        data = {}
+        if user.pin and user.pin == json_data.get('pin'):
+            data["status"] = "valid"
+        else:
+            data["status"] = "invalid"
+        return http.JsonResponse(data)
+
+
+class WithdrawView(View, UssdUserMixin):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super(WithdrawView, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_user()
+        if user is None:
+            return http.JsonResponse({'error_code': 403, 'msg': 'user not registered'})
+        json_data = json.loads(self.request.body)
+        # TODO 
+        # - check balance
+        resp_data = {}
+        
+        pin = json_data.get('pin')
+        amount = abs(json_data.get('amount'))
+        if pin is None or user.pin != pin:
+            resp_data["status"] = 'error'  # TODO handle error
+            return http.JsonResponse(resp_data)
+        
+        # TODO - this stops user from dwawing total balance! 
+        if not amount or amount < 5 or amount > user.balance() or user.balance() - amount < 5:
+            resp_data['status'] = 'error'  # TODO handle error
+            return http.JsonResponse(resp_data)
+
+        Transaction.objects.create(
+            user=user,
+            action=Transaction.WITHDRAWAL,
+            amount=-amount,
+            reference_code=''  # TODO
+        )
+        # TODO should we fire off async airtime operation or should we run 
+        # a task that matches WITHDRAWAL transactions agains AIRTIME transactions?
+        resp_data['status'] = 'success'
+
+        return http.JsonResponse(resp_data)
+
+
