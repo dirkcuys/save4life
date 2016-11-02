@@ -274,13 +274,20 @@ class WithdrawView(View, UssdUserMixin):
         resp_data = {}
         
         pin = json_data.get('pin')
-        amount = abs(json_data.get('amount'))
         if pin is None or user.pin != pin:
             resp_data["status"] = 'error'  # TODO handle error
             return http.JsonResponse(resp_data)
         
-        # TODO - this stops user from dwawing total balance! 
-        if not amount or amount < 5 or amount > user.balance() or user.balance() - amount < 5:
+        # TODO - move transaction logic to model
+        amount = abs(json_data.get('amount'))
+        if not amount or amount < 5 or amount > user.balance(): 
+            resp_data['status'] = 'error'  # TODO handle error
+            return http.JsonResponse(resp_data)
+
+        # Stop user from withdrawing an amount that would result in 
+        # positive balance less than 5
+        resulting_balance = user.balance() - amount
+        if 0 < resulting_balance < 5:
             resp_data['status'] = 'error'  # TODO handle error
             return http.JsonResponse(resp_data)
 
@@ -295,5 +302,3 @@ class WithdrawView(View, UssdUserMixin):
         resp_data['status'] = 'success'
 
         return http.JsonResponse(resp_data)
-
-
