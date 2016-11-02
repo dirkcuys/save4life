@@ -361,7 +361,145 @@ class TestUssdApi(TestCase):
         self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 4)
         self.assertEquals(self.user.balance(), 107)
 
+
     def test_with_withdrawal(self):
-        # TODO add test once withdrawal is implemented 
-        pass
+        # week 1 saving
+        with freeze_time(datetime(2015, 12, 28, 10)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[0]
+            )
+
+        with freeze_time(datetime(2016, 1, 4)):
+            calculate_rewards()
+            calculate_rewards()
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 0)
+
+        # week 2 saving
+        with freeze_time(datetime(2016, 1, 10, 15)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[1]
+            )
+
+        with freeze_time(datetime(2016, 1, 11)):
+            calculate_rewards()
+            calculate_rewards()
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 1)
+
+        # week 3 saving
+        with freeze_time(datetime(2016, 1, 17, 15)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[2]
+            )
+
+        with freeze_time(datetime(2016, 1, 18)):
+            calculate_rewards()
+            calculate_rewards()
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 1)
+
+        # week 4 saving
+        with freeze_time(datetime(2016, 1, 20, 15)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[3]
+            )
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.WITHDRAWAL,
+                amount=-5,
+                reference_code=''
+            )
+
+        with freeze_time(datetime(2016, 1, 25)):
+            calculate_rewards()
+            calculate_rewards()
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 1)
+        self.assertEquals(self.user.balance(), 40)
+
+        # week 5 saving
+        with freeze_time(datetime(2016, 1, 28, 15)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[4]
+            )
+
+        with freeze_time(datetime(2016, 2, 1)):
+            calculate_rewards()
+            calculate_rewards()
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 1)
+
+        # week 6 saving
+        with freeze_time(datetime(2016, 2, 2, 15)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[5]
+            )
+
+        with freeze_time(datetime(2016, 2, 8)):
+            calculate_rewards()
+            calculate_rewards()
+
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 2)
+        self.assertEquals(self.user.balance(), 65)
+
+        # week 7 saving
+        with freeze_time(datetime(2016, 2, 9)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[6]
+            )
+
+        with freeze_time(datetime(2016, 2, 15)):
+            calculate_rewards()
+            calculate_rewards()
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 2)
+        self.assertEquals(self.user.balance(), 75)
+
+        # week 8 saving
+        with freeze_time(datetime(2016, 2, 18, 15)):
+            Transaction.objects.create(
+                user=self.user,
+                action=Transaction.SAVING,
+                amount=10,
+                reference_code='saving',
+                voucher=self.vouchers[7]
+            )
+
+        with freeze_time(datetime(2016, 2, 22)):
+            calculate_rewards()
+            calculate_rewards()
+
+        self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 3)
+        self.assertEquals(self.user.balance(), 92)
+
 
