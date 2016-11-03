@@ -29,6 +29,7 @@ class UssdUser(models.Model):
         }
 
     def registration_complete(self):
+        """ return True if registration is complete """
         return all([
             self.name != '',
             self.goal_item != '',

@@ -1,6 +1,5 @@
 from .models import Transaction
 from .tasks import issue_airtime
-from .tasks import issue_airtime_withdrawal
 
 from datetime import datetime
 
@@ -39,8 +38,16 @@ def redeem_voucher(voucher, user, savings_amount):
     )
 
     # TODO - change this to create transaction that will be processes later
-    # Credit airtime with remainder - call external API
-    issue_airtime.delay(voucher)
+    # Credit airtime with remainder
+    airtime_amount = voucher.amount - savings_amount
+    airtime_transaction = Transaction.objects.create(
+        user=user,
+        action=Transaction.AIRTIME,
+        amount=airtime_amount,
+        reference_code ='',  # TODO
+        voucher=voucher
+    )
+    issue_airtime.delay(airtime_transaction)
 
 
 def withdraw_savings(user, amount):
@@ -61,4 +68,11 @@ def withdraw_savings(user, amount):
     )
     # TODO should we fire off async airtime operation or should we run 
     # a task that matches WITHDRAWAL transactions agains AIRTIME transactions?
-    issue_airtime_withdrawal.delay(transaction.pk)
+
+    airtime_transaction = Transaction.objects.create(
+        user=user,
+        action=Transaction.AIRTIME,
+        amount=amount,
+        reference_code='' #TODO
+    )
+    issue_airtime.delay(airtime_transaction)

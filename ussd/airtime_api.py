@@ -10,13 +10,16 @@ logger = logging.getLogger(__name__)
 class InsufficientBalance(Exception):
     pass
 
+class AirtimeApiError(Exception):
+    pass
 
-def pinless_recharge(msisdn, amount):
+def pinless_recharge(transaction):
+    amount = transaction.amount
+    msisdn = transaction.user.msisdn
+    api_ref = 'transaction-{0}'.format(transaction.pk)  # Reference for external API
 
     logger.info(u'pinless_recharge({0}, {1})'.format(msisdn, amount))
     client = Client(settings.AIRTIME_WSDL_URL)
-
-    ref = "{0}-{1}-{2}".format(msisdn, amount, time.time())
     
     # authenticate client
     auth_resp = client.service.authenticate_cashier(
@@ -36,7 +39,7 @@ def pinless_recharge(msisdn, amount):
 
     recharge_resp = client.service.vend_airtime_pinless(
         authtoken=token,
-        reference=ref,
+        reference=api_ref,
         sourcemsisdn=settings.AIRTIME_MSISDN,
         msisdn=msisdn,
         denomination=amount
@@ -44,8 +47,11 @@ def pinless_recharge(msisdn, amount):
 
     if recharge_resp.vend_airtime_pinlessResult != True:
         logger.info(u'pinless_recharge({0}, {1}) failed')
-        raise Exception(u'Could not issue airtime: '.format(recharge_resp.error))
+        raise AirtimeApiError(u'Could not issue airtime: '.format(recharge_resp.error))
+    
+    # reference used by transaction 
+    ref = "{0}-{1}-{2}".format(msisdn, amount, int(time.time()))
+    transaction.reference_code = ref
+    transaction.save()
 
-    logger.info(u'pinless_recharge({0}, {1}) success')
-
-    return ref
+    logger.info(u'pinless_recharge({0}, {1}) success. ref# {2}'.format(msisdn, amount, ref))

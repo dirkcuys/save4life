@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.test import Client
 from django.utils import timezone
 
-from ussd.models import Voucher, UssdUser
+from ussd.models import Voucher, UssdUser, Transaction
 
 import json
 from mock import patch
@@ -115,6 +115,11 @@ class TestUssdApi(TestCase):
                     content_type='application/json')
             self.assertEquals(resp.json().get('status'), 'success')
             self.assertTrue(issue_airtime.called)
+
+        # test that we created 2 Transactions
+        self.assertEquals(Transaction.objects.filter(voucher=voucher).count(), 2)
+        self.assertEquals(Transaction.objects.filter(voucher=voucher).first().amount, 10)
+        self.assertEquals(Transaction.objects.filter(voucher=voucher).last().amount, 90)
 
         # test that user received savings
         resp = c.get('/ussd/user_registration/27831112222/')

@@ -60,7 +60,7 @@ class TestWithdrawalApi(TestCase):
             "amount": 10
         }
 
-        with patch('ussd.transactions.issue_airtime_withdrawal.delay') as withdraw_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as withdraw_airtime:
             resp = c.post('/ussd/withdraw/', data=json.dumps(data), content_type='application/json')
             self.assertTrue(withdraw_airtime.called)
         self.assertEquals(resp.json().get('status'), u'success')
@@ -74,7 +74,7 @@ class TestWithdrawalApi(TestCase):
             "pin": "1234",
             "amount": 5
         }
-        with patch('ussd.transactions.issue_airtime_withdrawal.delay') as withdraw_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as withdraw_airtime:
             resp = c.post('/ussd/withdraw/', data=json.dumps(data), content_type='application/json')
             self.assertTrue(withdraw_airtime.called)
         self.assertEquals(resp.json().get('status'), u'success')
@@ -88,7 +88,7 @@ class TestWithdrawalApi(TestCase):
             "pin": "1234",
             "amount": 4
         }
-        with patch('ussd.transactions.issue_airtime_withdrawal.delay') as withdraw_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as withdraw_airtime:
             resp = c.post('/ussd/withdraw/', data=json.dumps(data), content_type='application/json')
             self.assertFalse(withdraw_airtime.called)
         self.assertEquals(resp.json().get('status'), u'error')
@@ -102,7 +102,7 @@ class TestWithdrawalApi(TestCase):
             "pin": "1234",
             "amount": 11
         }
-        with patch('ussd.transactions.issue_airtime_withdrawal.delay') as withdraw_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as withdraw_airtime:
             resp = c.post('/ussd/withdraw/', data=json.dumps(data), content_type='application/json')
             self.assertFalse(withdraw_airtime.called)
         self.assertEquals(resp.json().get('status'), u'error')
@@ -116,7 +116,7 @@ class TestWithdrawalApi(TestCase):
             "pin": "1234",
             "amount": 15
         }
-        with patch('ussd.transactions.issue_airtime_withdrawal.delay') as withdraw_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as withdraw_airtime:
             resp = c.post('/ussd/withdraw/', data=json.dumps(data), content_type='application/json')
             self.assertTrue(withdraw_airtime.called)
         self.assertEquals(resp.json().get('status'), u'success')
