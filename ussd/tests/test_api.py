@@ -110,9 +110,10 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 10 
         }
-        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
+            self.assertEquals(resp.json().get('status'), 'success')
             self.assertTrue(issue_airtime.called)
 
         # test that user received savings
@@ -142,7 +143,7 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 100 
         }
-        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
             self.assertTrue(issue_airtime.called)
@@ -165,7 +166,7 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 0 
         }
-        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
             self.assertTrue(issue_airtime.called)
@@ -188,7 +189,7 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 200 
         }
-        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
             self.assertFalse(issue_airtime.called)
@@ -212,7 +213,7 @@ class TestUssdApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": -20 
         }
-        with patch('ussd.views.issue_airtime.delay') as issue_airtime:
+        with patch('ussd.transactions.issue_airtime.delay') as issue_airtime:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
             self.assertFalse(issue_airtime.called)

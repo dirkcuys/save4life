@@ -30,7 +30,7 @@ class TestAirtimeApi(TestCase):
             "voucher_code": "1234567890123456",
             "savings_amount": 20 
         }
-        with patch('ussd.views.issue_airtime.delay') as issue_airtime_delay:
+        with patch('ussd.transactions.issue_airtime.delay') as issue_airtime_delay:
             resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
                     content_type='application/json')
             self.assertTrue(issue_airtime_delay.called)

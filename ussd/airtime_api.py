@@ -1,9 +1,11 @@
 from django.conf import settings
 
 from zeep import Client
+import time
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class InsufficientBalance(Exception):
     pass
@@ -13,12 +15,14 @@ def pinless_recharge(msisdn, amount):
 
     logger.info(u'pinless_recharge({0}, {1})'.format(msisdn, amount))
     client = Client(settings.AIRTIME_WSDL_URL)
+
+    ref = "{0}-{1}-{2}".format(msisdn, amount, time.time())
     
     # authenticate client
     auth_resp = client.service.authenticate_cashier(
-            terminalnumber=settings.AIRTIME_TERMINAL_NUMBER,
-            msisdn=settings.AIRTIME_MSISDN,
-            pin=settings.AIRTIME_PIN
+        terminalnumber=settings.AIRTIME_TERMINAL_NUMBER,
+        msisdn=settings.AIRTIME_MSISDN,
+        pin=settings.AIRTIME_PIN
     )
 
     # get auth token
@@ -31,11 +35,11 @@ def pinless_recharge(msisdn, amount):
         raise InsufficientBalance('Account balance too low for airtime recharge')
 
     recharge_resp = client.service.vend_airtime_pinless(
-            authtoken=token,
-            reference='',
-            sourcemsisdn=settings.AIRTIME_MSISDN,
-            msisdn=msisdn,
-            denomination=amount
+        authtoken=token,
+        reference=ref,
+        sourcemsisdn=settings.AIRTIME_MSISDN,
+        msisdn=msisdn,
+        denomination=amount
     )
 
     if recharge_resp.vend_airtime_pinlessResult != True:
@@ -44,5 +48,4 @@ def pinless_recharge(msisdn, amount):
 
     logger.info(u'pinless_recharge({0}, {1}) success')
 
-    # TODO return a reference
-    return True
+    return ref

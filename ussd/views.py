@@ -10,10 +10,12 @@ from datetime import datetime
 
 from .models import UssdUser
 from .models import Voucher
-from .models import Transaction
 from .models import Quiz, Answer
 from .tasks import send_welcome_sms
-from .tasks import issue_airtime
+from .transactions import TransactionError
+from .transactions import award_joining_bonus
+from .transactions import redeem_voucher
+from .transactions import withdraw_savings
 
 
 class UssdUserMixin(object):
@@ -76,16 +78,8 @@ class UssdRegistrationView(View):
         # if registration was just completed, send welcome sms
         is_complete = ussd_user.registration_complete()
         if not was_complete and is_complete:
-            # Award joining bonus
-            Transaction.objects.create(
-                user=ussd_user,
-                action=Transaction.REGISTRATION_BONUS,
-                amount=5,  # TODO store joining bonus somewhere
-                reference_code='joining bonus'
-            )
-            # Send welcome SMS
+            award_joining_bonus(ussd_user)
             send_welcome_sms.delay(ussd_user.msisdn)
-
 
         return http.JsonResponse(ussd_user.to_dict())
 
@@ -140,37 +134,15 @@ class VoucherRedeemView(View, UssdUserMixin):
     def post(self, request, *args, **kwargs):
         user = self.get_user()
         voucher = self.get_voucher()
-
         if user is None or voucher is None:
             return http.JsonResponse({"status": "invalid"})  # TODO make errors consistent
-
-        # make sure voucher wasn't already redeemed or revoked!!
-        if voucher.redeemed_at or voucher.revoked_at:
-            return http.JsonResponse({"status": "invalid"})  # TODO make errors consistent
-
         json_data = json.loads(self.request.body)
         savings_amount = json_data.get("savings_amount")
-        # verify that savings amount is valid
-        if savings_amount > voucher.amount or savings_amount < 0:
+
+        try:
+            redeem_voucher(voucher, user, savings_amount)
+        except TransactionError as e:
             return http.JsonResponse({"status": "invalid"})  # TODO make errors consistent
-
-        # TODO move voucher redeem code somewhere else
-        voucher.redeemed_at = datetime.utcnow()
-        voucher.redeemed_by = user
-        voucher.save()
-
-        # Credit user balance with savings amount
-        Transaction.objects.create(
-            user=user,
-            action=Transaction.SAVING,
-            amount=savings_amount,
-            reference_code='savings',
-            voucher=voucher
-        )
-
-        # Credit airtime with remainder - call external API
-        issue_airtime.delay(voucher)
-
         return http.JsonResponse({"status": "success"})
 
 
@@ -203,7 +175,6 @@ class QuizView(View, UssdUserMixin):
             results = quiz.mark_quiz(ussd_user)
             data.update({'user_progress': results[1]})
             data.update({'user_score': results[0]})
-
 
         return http.JsonResponse(data)
 
@@ -268,37 +239,20 @@ class WithdrawView(View, UssdUserMixin):
         user = self.get_user()
         if user is None:
             return http.JsonResponse({'error_code': 403, 'msg': 'user not registered'})
-        json_data = json.loads(self.request.body)
-        # TODO 
-        # - check balance
         resp_data = {}
         
+        json_data = json.loads(self.request.body)
         pin = json_data.get('pin')
         if pin is None or user.pin != pin:
             resp_data["status"] = 'error'  # TODO handle error
             return http.JsonResponse(resp_data)
         
-        # TODO - move transaction logic to model
         amount = abs(json_data.get('amount'))
-        if not amount or amount < 5 or amount > user.balance(): 
+        try:
+            withdraw_savings(user, amount)
+        except TransactionError as e:
             resp_data['status'] = 'error'  # TODO handle error
             return http.JsonResponse(resp_data)
 
-        # Stop user from withdrawing an amount that would result in 
-        # positive balance less than 5
-        resulting_balance = user.balance() - amount
-        if 0 < resulting_balance < 5:
-            resp_data['status'] = 'error'  # TODO handle error
-            return http.JsonResponse(resp_data)
-
-        Transaction.objects.create(
-            user=user,
-            action=Transaction.WITHDRAWAL,
-            amount=-amount,
-            reference_code=''  # TODO
-        )
-        # TODO should we fire off async airtime operation or should we run 
-        # a task that matches WITHDRAWAL transactions agains AIRTIME transactions?
         resp_data['status'] = 'success'
-
         return http.JsonResponse(resp_data)

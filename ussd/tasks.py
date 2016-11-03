@@ -59,6 +59,58 @@ def issue_airtime(voucher):
         # TODO should we retry this?
 
 
+@task(name="withdraw_airtime")
+def issue_airtime_withdrawal(transaction_id):
+    transaction = Transaction.objects.get(pk=transaction_id)
+    if transaction.action != Transaction.WITHDRAWAL:
+        raise Exception('Transaction passed to withdraw_airtime should be a WITHDRAWAL')
+    if transaction.reference_code and Transaction.objects.filter(reference_code=transaction.reference_code):
+        raise Exception('Airtime already issued for this withdrawal transaction')
+    # TODO - we should make sure this transaction doesn't already have a airtime equivalent
+    try:
+        ref = pinless_recharge(transaction.user.msisdn, abs(transaction.amount))
+        Transaction.objects.create(
+            user=voucher.redeemed_by,
+            action=Transaction.AIRTIME,
+            amount=airtime_amount,
+            reference_code = ref,
+            voucher = voucher
+        )
+        transaction.reference_code = ref
+        transaction.save()
+    except Exception as e:
+        logger.error('Could not issue R{0} airtime to {1}'.format(transaction.amount, transaction.user.msisdn))
+        # TODO should we retry this?
+
+
+@task(name="withdraw_airtime_backlog")
+def withdraw_airtime_backlog():
+    return
+    # TODO - this could potentially issue airtime multiple times if
+    # more than 1 task executes at the same time!
+
+    # find withdrawals with unmatched airtime issue transactions
+    unprocessed = Transaction.objects\
+        .filter(action=Transaction.WITHDRAWAL)\
+        .exclude(
+            reference_code__in=Transaction.objects
+            .filter(action=Transaction.AIRTIME).values('reference_code')
+        )
+    # issue airtime
+    while unprocessed.count() > 0:
+        withdrawal = unprocessed.first()
+        ref = pinless_recharge(withdrawal.user.msisdn, abs(withdrawal.amount))
+        Transaction.objects.create(
+            user=voucher.redeemed_by,
+            action=Transaction.AIRTIME,
+            amount=airtime_amount,
+            reference_code = ref,
+            voucher = voucher
+        )
+        withdrawal.reference = ref
+        withdrawal.save()
+
+
 @task(name='send_messages')
 def send_messages():
     messages = Message.objects.filter(send_at__lte=datetime.now(), sent_at__isnull=True)
