@@ -16,6 +16,15 @@ def award_joining_bonus(user):
     return transaction
 
 
+def award_streak(user, streak_number, amount):
+    Transaction.objects.create(
+        user=user,
+        action=Transaction.REWARD,
+        amount=amount,
+        reference_code='streak {0} reward'.format(streak_number)
+    )
+
+
 def redeem_voucher(voucher, user, savings_amount):
     # make sure voucher wasn't already redeemed or revoked!!
     if voucher.redeemed_at or voucher.revoked_at:

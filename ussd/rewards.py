@@ -1,4 +1,5 @@
 from .models import Transaction, UssdUser
+from .transactions import award_streak
 
 from datetime import datetime, timedelta
 
@@ -23,24 +24,7 @@ def calculate_rewards():
     ).values('user_id')
 
     for user in UssdUser.objects.filter(pk__in=users):
-        savings = user.transaction_set.filter(
-            action=Transaction.SAVING,
-            amount__gt=0
-        ).values('created_at').order_by('-created_at')
-        weeks = 0  # Number of consecutive weeks saved
-        while True:
-            start = week_start - timedelta(days=weeks*7)
-            end = start + timedelta(days=7)
-            # make sure the user saved during the week
-            if not savings.filter(created_at__gt=start, created_at__lte=end).exists():
-                break
-            # check for withdrawals during the week
-            withdrawals = user.transaction_set.filter(created_at__gt=start).\
-                filter(created_at__lte=end).\
-                filter(action=Transaction.WITHDRAWAL)
-            if withdrawals.exists():
-                break
-            weeks += 1
+        weeks = user.streak()
         rewards = user.transaction_set.filter(
             action=Transaction.REWARD,
             created_at__gt=week_start-timedelta(weeks=weeks-1)
@@ -48,14 +32,9 @@ def calculate_rewards():
         conditions = [
             weeks > 0,
             weeks % 2 == 0,
-            rewards.count() < weeks/2
+            rewards.count() < weeks//2
         ]
         if all(conditions):
-            streak = weeks/2 % 3
+            streak = weeks//2 % 3
             # TODO move transaction code somewhere central
-            Transaction.objects.create(
-                user=user,
-                action=Transaction.REWARD,
-                amount=streak_award[streak-1],
-                reference_code='streak {0} reward'.format(streak)
-            )
+            award_streak(user, streak, streak_award[streak-1])

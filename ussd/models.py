@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models import Sum
 from django.db.models import Q, F
 
+from datetime import datetime, timedelta
+
 
 class UssdUser(models.Model):
     msisdn = models.CharField(max_length=12, primary_key=True)  # TODO validate msisdn
@@ -25,7 +27,8 @@ class UssdUser(models.Model):
             'goal_amount': self.goal_amount,
             'recurring_amount': self.recurring_amount,
             'balance': self.balance(),
-            'pin_set': True if self.pin else False
+            'pin_set': True if self.pin else False,
+            'streak': self.current_streak()
         }
 
     def registration_complete(self):
@@ -42,6 +45,53 @@ class UssdUser(models.Model):
             .aggregate(Sum('amount'))\
             .get('amount__sum', 0)\
             or 0
+
+
+    def streak(self):
+        """ number of weeks consecutively saved"""
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today - timedelta(days=today.weekday()+7)
+        savings = self.transaction_set.filter(
+            action=Transaction.SAVING,
+            amount__gt=0
+        ).values('created_at').order_by('-created_at')
+        weeks = 0  # Number of consecutive weeks saved
+        while True:
+            start = week_start - timedelta(days=weeks*7)
+            end = start + timedelta(days=7)
+            # make sure the user saved during the week
+            if not savings.filter(created_at__gt=start, created_at__lte=end).exists():
+                break
+            # check for withdrawals during the week
+            withdrawals = self.transaction_set.filter(created_at__gt=start).\
+                filter(created_at__lte=end).\
+                filter(action=Transaction.WITHDRAWAL)
+            if withdrawals.exists():
+                break
+            weeks += 1
+        return weeks
+
+
+    def current_streak(self):
+        """ counts this week if user saved this week """
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today - timedelta(days=today.weekday())
+        savings = self.transaction_set.filter(
+            action=Transaction.SAVING,
+            amount__gt=0,
+            created_at__gt=week_start
+        )
+        withdrawals = self.transaction_set.filter(
+            action=Transaction.WITHDRAWAL,
+            created_at__gt=week_start
+        )
+        if withdrawals.exists():
+            return 0
+        elif savings.exists():
+            return 1 + self.streak()
+        else:
+            return self.streak()
+
 
     def __unicode__(self):
         return u"UssdUser <{0}>".format(self.name)

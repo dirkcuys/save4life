@@ -4,7 +4,7 @@ from ussd import models
 from ussd.forms import MessageAdminForm
 
 class UssdUserAdmin(admin.ModelAdmin):
-    list_display = ('msisdn', 'name', 'goal_item', 'goal_amount')
+    list_display = ('msisdn', 'name', 'goal_item', 'goal_amount', 'balance', 'streak')
 
 class QuestionInline(admin.TabularInline):
     model = models.Question
