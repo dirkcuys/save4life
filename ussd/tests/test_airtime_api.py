@@ -2,11 +2,11 @@ from django.test import TestCase
 from django.test import Client
 from django.utils import timezone
 
-from ussd.models import Voucher, UssdUser, Transaction
+from ussd.models import Voucher, UssdUser, Transaction, Message
+from ussd.tasks import issue_airtime
 from ussd.airtime_api import pinless_recharge
 from ussd.airtime_api import InsufficientBalance
 from ussd.airtime_api import AirtimeApiError
-from ussd.tasks import issue_airtime
 
 
 import json
@@ -20,26 +20,24 @@ class TestAirtimeApi(TestCase):
 
 
     def test_issue_airtime(self):
-        c = Client()
-        # create a voucher
-        voucher = Voucher.objects.create(code='1234567890123456', amount=100)
-
-        # redeem voucher
-        data = {
-            "msisdn": "27831112222",
-            "voucher_code": "1234567890123456",
-            "savings_amount": 20 
-        }
-        with patch('ussd.transactions.issue_airtime.delay') as issue_airtime_delay:
-            resp = c.post('/ussd/voucher/redeem/', data=json.dumps(data), 
-                    content_type='application/json')
-            self.assertTrue(issue_airtime_delay.called)
-            self.assertEqual(resp.json().get('status'), 'success') 
-
-        voucher.refresh_from_db()
-        self.assertEquals(Transaction.objects.filter(voucher=voucher).count(), 2)
-        airtime_transaction = Transaction.objects.filter(voucher=voucher).last()
-        self.assertEquals(airtime_transaction.action, Transaction.AIRTIME)
+        transaction = Transaction.objects.create(
+            user=self.user,
+            action=Transaction.SAVING,
+            amount=20,
+            reference_code='savings'
+        )
+        transaction = Transaction.objects.create(
+            user=self.user,
+            action=Transaction.AIRTIME,
+            amount=80,
+            reference_code=''
+        )
+        self.assertEquals(Message.objects.all().count(), 0)
+        with patch('ussd.tasks.pinless_recharge') as pinless_recharge:
+            issue_airtime(transaction)
+            self.assertTrue(pinless_recharge.called)
+        self.assertEquals(Message.objects.all().count(), 1)
+        self.assertEquals(Message.objects.first().body, 'Hi Spongebob. We have credited your mobile with R80 airtime. Your savings balance is R20.')
 
 
     def test_pinless_recharge_fail(self):

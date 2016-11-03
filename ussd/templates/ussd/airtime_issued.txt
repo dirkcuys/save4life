@@ -1,0 +1,1 @@
+Hi {{transaction.user.name}}. We have credited your mobile with R{{transaction.amount}} airtime. Your savings balance is R{{transaction.user.balance}}.

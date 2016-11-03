@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.template.loader import render_to_string
+
 from celery.decorators import task
 
 from .airtime_api import pinless_recharge
@@ -40,6 +42,15 @@ def send_welcome_sms(msisdn):
 def issue_airtime(transaction):
     try:
         pinless_recharge(transaction)
+        context = {
+            'transaction': transaction
+        }
+        message_text = render_to_string('ussd/airtime_issued.txt', context).strip('\n')
+        Message.objects.create(
+            to=transaction.user.msisdn,
+            body=message_text,
+            send_at=datetime.utcnow()
+        )
     except InsufficientBalance as e:
         logger.error('Account balance not sufficient to issue airtime!')
         # TODO send a msg to administrator to manually inspect and retry?
@@ -50,12 +61,14 @@ def issue_airtime(transaction):
 
 @task(name='send_messages')
 def send_messages():
-    messages = Message.objects.filter(send_at__lte=datetime.now(), sent_at__isnull=True)
+    messages = Message.objects.filter(
+        send_at__lte=datetime.utcnow(),
+        sent_at__isnull=True
+    )
     for msg in messages:
         try:
             send_junebug_sms(msg.to, msg.body)
-            msg.sent_at = datetime.now()
+            msg.sent_at = datetime.utcnow()
             msg.save()
         except Exception as e:
             logger.error('could not send message!')
-
