@@ -4,6 +4,8 @@ from django.views.generic.detail import SingleObjectMixin
 from django.utils.decorators import method_decorator
 from django import http
 from django.utils import timezone
+from django.template.response import TemplateResponse
+from django.core.urlresolvers import reverse
 
 import json
 from datetime import datetime
@@ -11,11 +13,13 @@ from datetime import datetime
 from .models import UssdUser
 from .models import Voucher
 from .models import Quiz, Answer
+from .models import generate_voucher
 from .tasks import send_welcome_sms
 from .transactions import TransactionError
 from .transactions import award_joining_bonus
 from .transactions import redeem_voucher
 from .transactions import withdraw_savings
+from .forms import VoucherGenerateForm
 
 
 class UssdUserMixin(object):
@@ -256,3 +260,30 @@ class WithdrawView(View, UssdUserMixin):
 
         resp_data['status'] = 'success'
         return http.JsonResponse(resp_data)
+
+
+def generate_vouchers(request):
+    context = {
+        'opts': {
+            'app_label': 'ussd',
+            'model_name': 'voucher'
+        }
+    }
+    if request.method == "POST":
+        form = VoucherGenerateForm(request.POST, request.FILES)
+        if form.is_valid():
+            distributor = form.cleaned_data['distributor']
+            for amount in [10, 20, 50]:
+                count = form.cleaned_data['vouchers_{}'.format(amount)]
+                vouchers = [
+                    generate_voucher(amount,distributor) for i in range(count)
+                ]
+            # TODO - success message
+            return http.HttpResponseRedirect(reverse('admin:ussd_voucher_changelist'))
+    else:
+        form = VoucherGenerateForm()
+        context["form"] = form
+
+    context["form"] = form
+    return TemplateResponse(request, "generate_vouchers.html", context)
+

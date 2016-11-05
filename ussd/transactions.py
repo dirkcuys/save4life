@@ -16,12 +16,12 @@ def award_joining_bonus(user):
     return transaction
 
 
-def award_streak(user, streak_number, amount):
+def award_streak(user, weeks, amount):
     Transaction.objects.create(
         user=user,
         action=Transaction.REWARD,
         amount=amount,
-        reference_code='streak {0} reward'.format(streak_number)
+        reference_code='streak-{0}'.format(weeks)
     )
 
 

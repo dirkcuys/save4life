@@ -1,10 +1,11 @@
 from .models import Transaction, UssdUser
-from .transactions import award_streak
 
 from datetime import datetime, timedelta
 
 
 def calculate_rewards():
+
+    from .transactions import award_streak
     """ Calculate rewards streaks for users who saved consecutive streaks.
     This method should be run once a week
     Rewards will be calculated for streaks ending the previous week.
@@ -37,4 +38,4 @@ def calculate_rewards():
         if all(conditions):
             streak = weeks//2 % 3
             # TODO move transaction code somewhere central
-            award_streak(user, streak, streak_award[streak-1])
+            award_streak(user, weeks, streak_award[streak-1])
