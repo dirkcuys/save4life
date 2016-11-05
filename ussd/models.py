@@ -114,9 +114,12 @@ class Voucher(models.Model):
 def generate_voucher(amount, distributor):
     import string
     import random
-    code = "".join([random.choice(string.digits) for i in range(16)])
+    def gen_code():
+        start = random.choice(['1','2','3','4','5','6','7','8','9'])
+        return "".join([start] + [random.choice(string.digits) for i in range(15)])
+    code = gen_code()
     while Voucher.objects.filter(code=code).count() > 0:
-        code = "".join([random.choice(string.digits) for i in range(16)])
+        code = gen_code()
     return Voucher.objects.create(code=code, amount=amount, distributor=distributor)
 
 
