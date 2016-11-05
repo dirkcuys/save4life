@@ -1,0 +1,38 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='ussd' %}">Ussd</a>
+&rsaquo; <a href="{% url 'admin:ussd_voucher_changelist' %}">Vouchers</a>
+&rsaquo; {% blocktrans %}Add vouchers{% endblocktrans %}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Add vouchers</h1>
+    <div id="content-main">
+
+    <form action="" method="post" id="voucher_generate_form" novalidate>{% csrf_token %}{% block form_top %}{% endblock %}
+        <div>
+            <fieldset class="module aligned ">
+                {% for field in form %}
+                    <div class="form-row">
+                        <div>
+                        {{ field.errors }}
+                        {{ field.label_tag }} {{ field }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </fieldset>
+
+            <div class="submit-row">
+                <input type="submit" value="Generate" class="default" name="_save" />
+            </div>
+        </div>
+    </form>
+</div>
+
+
+{% endblock %}

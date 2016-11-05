@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 """
 Django settings for save4life project.
 
@@ -117,7 +118,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False
+USE_TZ = False #TODO
 
 
 # Static files (CSS, JavaScript, Images)
@@ -128,6 +129,24 @@ STATIC_ROOT = path('static_serve')
 
 ####### Celery config #######
 BROKER_URL = os.environ.get('BROKER_URL', 'amqp://guest:guest@localhost//')
+
+from celery.schedules import crontab
+
+CELERYBEAT_SCHEDULE = {
+    'send_reminders': {
+        'task': 'ussd.tasks.send_messages',
+        'schedule': crontab(minute='*/10'),
+    },
+    'weekly_rewards': {
+        'task': 'ussd.tasks.calculate_weekly_streaks',
+        'schedule': crontab(hour=8, minute=0, day_of_week='monday'),
+    },
+    'weekly_report': {
+        'task': 'ussd.tasks.send_weekly_report',
+        'schedule': crontab(hour=10, minute=0, day_of_week='monday'),
+    },
+}
+
 
 # Url to Junebug channel for sending SMSes
 JUNEBUG_SMS_URL = os.environ.get('JUNEBUG_SMS_URL', 'http://locahost/')

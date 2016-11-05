@@ -83,7 +83,7 @@ class TestUssdApi(TestCase):
         self.assertEquals(award_transaction.user, self.user)
         self.assertEquals(award_transaction.action, Transaction.REWARD)
         self.assertEquals(award_transaction.amount, 5)
-        self.assertEquals(award_transaction.reference_code, u'streak 1 reward')
+        self.assertEquals(award_transaction.reference_code, u'streak-2')
 
 
     def test_6_week_streak(self):

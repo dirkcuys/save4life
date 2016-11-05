@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.contrib.auth.models import User
 
 from celery.decorators import task
 
@@ -7,10 +9,13 @@ from .airtime_api import pinless_recharge
 from .airtime_api import InsufficientBalance
 from .airtime_api import AirtimeApiError
 from .models import Transaction, Message
+from .report import generate_report_data
+from .rewards import calculate_rewards
+from .rewards import calculate_rewards
 
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,3 +77,31 @@ def send_messages():
             msg.save()
         except Exception as e:
             logger.error('could not send message!')
+
+
+@task(name='calculate_weekly_streaks')
+def calculate_weekly_streaks():
+    # TODO
+    calculate_rewards()
+
+
+@task(name='send_weekly_report')
+def send_weekly_report():
+    """ 
+    Send report for activity during the previous week.
+    Make sure this task runs weekly after the task to calculate rewards has run
+    """
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    last_week_start = today - timedelta(days=today.weekday()+7)
+    last_week_end = today - timedelta(days=today.weekday())
+
+    context = generate_report_data(last_week_start, last_week_end)
+    context.update({'start': last_week_start, 'end': last_week_end})
+    text_body = render_to_string('ussd/report.txt', context)
+    html_body = render_to_string('ussd/report.html', context)
+    subject = 'Save4Life weekly report'
+    to = [ user.email for user in User.objects.filter(is_staff=True)]
+
+    msg = EmailMultiAlternatives(subject, text_body, settings.SERVER_EMAIL, to)
+    msg.attach_alternative(html_body, 'text/html')
+    msg.send()

@@ -1,0 +1,11 @@
+Save4Life weekly report for the week starting {{start_date}}
+
+ * Total amount of airtime redeemed this week: {{total_airtime}}
+ * Total amount of airtime saved this week: {{total_savings_amount}}
+ * Average savings this week: {{average_savings}}
+ * Total 2 week streaks this week: {{streak_2}}
+ * Total 4 week streaks this week: {{streak_4}}
+ * Total 6 week streaks this week: {{streak_6}}
+ * Total quizzes completed this week: {{quizzes_completed}}
+ * Average quiz score this week: {{average_quiz_score}}
+
