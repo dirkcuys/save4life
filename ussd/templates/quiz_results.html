@@ -15,8 +15,6 @@
 
 <div id="content-main">
   <div class="module" id="changelist">
-
-
     <div class="results">
         <table id="result_list">
             <thead>
@@ -39,19 +37,30 @@
                        <div class="text"><a href="?o=2">Score</a></div>
                        <div class="clear"></div>
                     </th>
+                     <th scope="col"  class="sortable column-award_prize">
+                       <div class="text"><a href="?o=2">Prize awarded</a></div>
+                       <div class="clear"></div>
+                    </th>
                 </tr>
             </thead>
         <tbody>
 
         {% for user_result in user_results %}
             <tr class="row{% cycle '1' '2' %}">
-                <td class="action-checkbox"><input class="action-select" name="_selected_action" type="checkbox" value="{{user_result_user.msisdn}}" /></td>
+                <td class="action-checkbox"><input class="action-select" name="_selected_action" type="checkbox" value="{{user_result.user.msisdn}}" /></td>
                 <th class="field-publish_at nowrap">{{user_result.user.msisdn}}</th>
                 {% for answer in user_result.answers %}
                     <td class="nowrap">{{answer.response_text}}</td>
                 {% endfor %}
 
                 <td class="field-ends_at nowrap">{{user_result.correct}}/{{user_result.total}}</td>
+                <td class="field-award-prize">
+                    {% if user_result.prize_awarded %}yes{% else %}
+                    <a href="{% url 'admin:quiz_award' quiz.id user_result.user.msisdn %}">
+                        Award prize
+                    </a>
+                    {% endif %}
+                </td>
             </tr>
         {% endfor %}
         </tbody>

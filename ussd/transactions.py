@@ -17,11 +17,20 @@ def award_joining_bonus(user):
 
 
 def award_streak(user, weeks, amount):
-    Transaction.objects.create(
+    return Transaction.objects.create(
         user=user,
         action=Transaction.REWARD,
         amount=amount,
         reference_code='streak-{0}'.format(weeks)
+    )
+
+
+def award_quiz_prize(user, quiz):
+    return Transaction.objects.create(
+        user=user,
+        action=Transaction.QUIZ_PRIZE,
+        amount=user.balance(),  # TODO should this be limited to an upper amount?
+        reference_code='quiz-{0}'.format(quiz.pk)
     )
 
 

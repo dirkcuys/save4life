@@ -1,7 +1,7 @@
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import SingleObjectMixin
-from django.views.generic import DetailView
+from django.views.generic import DetailView, FormView
 from django.utils.decorators import method_decorator
 from django import http
 from django.utils import timezone
@@ -15,13 +15,17 @@ from datetime import datetime
 from .models import UssdUser
 from .models import Voucher
 from .models import Quiz, Answer
+from .models import Message
+from .models import Transaction
 from .models import generate_voucher
 from .tasks import send_welcome_sms
 from .transactions import TransactionError
 from .transactions import award_joining_bonus
+from .transactions import award_quiz_prize
 from .transactions import redeem_voucher
 from .transactions import withdraw_savings
 from .forms import VoucherGenerateForm
+from .forms import QuizAwardForm
 
 
 class UssdUserMixin(object):
@@ -309,16 +313,59 @@ class QuizResultsView(DetailView):
         for user_quiz in completed_qs:
             quiz = Quiz.objects.get(pk=user_quiz.get('question__quiz'))
             user = UssdUser.objects.get(msisdn=user_quiz.get('user'))
+            prize_awarded = Transaction.objects\
+                .filter(user=user, action=Transaction.QUIZ_PRIZE)\
+                .filter(reference_code='quiz-{0}'.format(quiz.pk))\
+                .exists()
             user_result = quiz.mark_quiz(user)
             user_answers = Answer.objects\
                 .filter(question__quiz=self.object, user=user)\
                 .order_by('question__id')
-            context['user_results'] += [
-                {
-                    'user': user,
-                    'correct': user_result[0],
-                    'total': user_result[1],
-                    'answers': user_answers
-                }
-            ]
+            user_context = {
+                'user': user,
+                'correct': user_result[0],
+                'total': user_result[1],
+                'answers': user_answers,
+                'prize_awarded': prize_awarded
+            }
+            context['user_results'] += [user_context]
         return context
+
+
+class QuizAwardView(SingleObjectMixin, FormView):
+    pk_url_kwarg = 'quiz_id'
+    model = Quiz
+    form_class = QuizAwardForm
+    template_name = 'quiz_award.html'
+
+    def get_user(self):
+        # NOTE: to support more than one user, msisdn would need to move out of URL
+        queryset = UssdUser.objects.filter(msisdn=self.kwargs.get('msisdn'))
+        if queryset.count() == 1:
+            return queryset.get()
+        else:
+            return None
+
+    def get_context_data(self, **kwargs):
+        self.object = self.get_object()
+        context = super(QuizAwardView, self).get_context_data(**kwargs)
+        context['quiz'] = self.object
+        context['user'] = self.get_user()
+        return context
+
+    def form_valid(self, form):
+        user = self.get_user()
+        quiz = self.get_object()
+        message_text = form.cleaned_data['sms_text']
+        # queue message  
+        Message.objects.create(
+            to=user.msisdn,
+            body=message_text,
+            send_at=datetime.utcnow()
+        )
+        # award prize
+        award_quiz_prize(user, quiz)
+        return super(QuizAwardView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('admin:quiz_results', args=(self.get_object().pk,))

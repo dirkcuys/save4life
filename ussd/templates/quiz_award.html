@@ -1,0 +1,35 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='ussd' %}">Ussd</a>
+    &rsaquo; <a href="{% url 'admin:ussd_quiz_changelist' %}">Quizzes</a>
+    &rsaquo; <a href="{% url 'admin:quiz_results' quiz.pk %}">{% blocktrans %}Quiz results{% endblocktrans %}</a>
+    &rsaquo; {% blocktrans %}Award prize{% endblocktrans %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+<h2>Award quiz prize</h2>
+
+<p>Award prize for quiz {{quiz.pk}} to {{user.name}}. The users&quot; balance will be doubled from R{{user.balance}} to R{{user.balance|add:user.balance}}.
+
+<form action="" method="post" novalidate>
+    {% csrf_token %}
+
+    {% for field in form %}
+        <div class="form-row">
+            <div>
+            {{ field.errors }}
+            {{ field.label_tag }} {{ field }}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="submit-row">
+        <input type="submit" value="Award prize" class="default" name="_save" />
+    </div>
+{% endblock %}

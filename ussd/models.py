@@ -129,16 +129,18 @@ class Transaction(models.Model):
     AIRTIME = 'airtime'
     REWARD = 'rewards'
     REGISTRATION_BONUS = 'registration bonus'
+    QUIZ_PRIZE = 'quiz_prize'
     ACTION_TYPES = [
         (SAVING, SAVING),
         (WITHDRAWAL, WITHDRAWAL),
         (AIRTIME, AIRTIME),
         (REWARD, REWARD),
         (REGISTRATION_BONUS, REGISTRATION_BONUS),
+        (QUIZ_PRIZE, QUIZ_PRIZE)
     ]
 
     user = models.ForeignKey(UssdUser)
-    action = models.CharField(max_length=12, choices=ACTION_TYPES)
+    action = models.CharField(max_length=32, choices=ACTION_TYPES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     amount = models.IntegerField()

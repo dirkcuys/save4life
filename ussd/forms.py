@@ -17,3 +17,6 @@ class VoucherGenerateForm(forms.Form):
     vouchers_50 = forms.IntegerField(label='R50 vouchers', min_value=0, initial=0)
     distributor = forms.CharField(max_length=128)
 
+
+class QuizAwardForm(forms.Form):
+    sms_text = forms.CharField(label='Text for prize SMS', max_length=160, widget=forms.Textarea)

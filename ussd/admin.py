@@ -8,6 +8,7 @@ from ussd import models
 from ussd.forms import MessageAdminForm
 from ussd.views import generate_vouchers
 from ussd.views import QuizResultsView
+from ussd.views import QuizAwardView
 
 from datetime import datetime
 import csv
@@ -36,10 +37,13 @@ class QuizAdmin(admin.ModelAdmin):
             url(r'^(?P<quiz_id>[\d]+)/results/$',
                 self.admin_site.admin_view(QuizResultsView.as_view()),
                 name="quiz_results"
+            ),
+            url(r'^(?P<quiz_id>[\d]+)/award/(?P<msisdn>[\d]+)/$',
+                self.admin_site.admin_view(QuizAwardView.as_view()),
+                name="quiz_award"
             )
         ]
         return my_urls + urls
-
 
 
 class MessageAdmin(admin.ModelAdmin):
