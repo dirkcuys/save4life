@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.conf.urls import url
 from django.http import HttpResponse
-from django.core import serializers
+from django.core.urlresolvers import reverse
+from django.utils.html import format_html
 
 from ussd import models
 from ussd.forms import MessageAdminForm
 from ussd.views import generate_vouchers
+from ussd.views import QuizResultsView
 
 from datetime import datetime
 import csv
@@ -22,7 +24,22 @@ class QuestionInline(admin.TabularInline):
 
 class QuizAdmin(admin.ModelAdmin):
     inlines = [QuestionInline]
-    list_display = ('publish_at', 'ends_at')
+    list_display = ('publish_at', 'ends_at', 'results')
+
+    def results(self, obj):
+        results_url = reverse('admin:quiz_results', args=(obj.pk,))
+        return format_html('<a href="{0}">View results</a>', results_url)
+
+    def get_urls(self):
+        urls = super(QuizAdmin, self).get_urls()
+        my_urls = [
+            url(r'^(?P<quiz_id>[\d]+)/results/$',
+                self.admin_site.admin_view(QuizResultsView.as_view()),
+                name="quiz_results"
+            )
+        ]
+        return my_urls + urls
+
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -86,6 +103,7 @@ class VoucherAdmin(admin.ModelAdmin):
         'redeemed_by'
     ]
     list_display_links = None
+    list_filter = ['distributor', 'amount']
     change_list_template = 'voucher_change_list.html'
     actions = [revoke_vouchers, export_as_csv]
 

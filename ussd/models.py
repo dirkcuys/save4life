@@ -191,6 +191,9 @@ class Answer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user_response = models.IntegerField()
 
+    def response_text(self):
+        return self.question.options.split(',')[self.user_response]
+
     # TODO set user and question as unique together
 
 

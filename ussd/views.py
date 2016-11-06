@@ -1,11 +1,13 @@
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import SingleObjectMixin
+from django.views.generic import DetailView
 from django.utils.decorators import method_decorator
 from django import http
 from django.utils import timezone
 from django.template.response import TemplateResponse
 from django.core.urlresolvers import reverse
+from django.db.models import Count
 
 import json
 from datetime import datetime
@@ -287,3 +289,36 @@ def generate_vouchers(request):
     context["form"] = form
     return TemplateResponse(request, "generate_vouchers.html", context)
 
+
+class QuizResultsView(DetailView):
+    """ Show results for every user that took the quiz """
+    pk_url_kwarg = 'quiz_id'
+    context_object_name = 'quiz'
+    model = Quiz
+    template_name = 'quiz_results.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(QuizResultsView, self).get_context_data(**kwargs)
+
+        completed_qs = Answer.objects\
+            .filter(question__quiz=self.object)\
+            .values('user', 'question__quiz')\
+            .annotate(completed_questions=Count('pk'))\
+            .filter(completed_questions=4)
+        context['user_results'] = []
+        for user_quiz in completed_qs:
+            quiz = Quiz.objects.get(pk=user_quiz.get('question__quiz'))
+            user = UssdUser.objects.get(msisdn=user_quiz.get('user'))
+            user_result = quiz.mark_quiz(user)
+            user_answers = Answer.objects\
+                .filter(question__quiz=self.object, user=user)\
+                .order_by('question__id')
+            context['user_results'] += [
+                {
+                    'user': user,
+                    'correct': user_result[0],
+                    'total': user_result[1],
+                    'answers': user_answers
+                }
+            ]
+        return context
