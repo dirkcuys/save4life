@@ -28,36 +28,60 @@ def export_as_csv(modeladmin, request, queryset):
     return response
 export_as_csv.short_description = "Export selected objects as CSV"
 
+def total_2_week_streaks(obj):
+    return obj.transaction_set.all()\
+        .filter(action=models.Transaction.REWARD)\
+        .filter(reference_code='streak-2')\
+        .count()
+
+def total_4_week_streaks(obj):
+    return obj.transaction_set.all()\
+        .filter(action=models.Transaction.REWARD)\
+        .filter(reference_code='streak-4')\
+        .count()
+
+def total_6_week_streaks(obj):
+    return obj.transaction_set.all()\
+        .filter(action=models.Transaction.REWARD)\
+        .filter(reference_code='streak-6')\
+        .count()
+
+def total_quiz_awards(obj):
+    return obj.transaction_set.all()\
+        .filter(action=models.Transaction.QUIZ_PRIZE)\
+        .count()
+
+def export_user_as_csv(modeladmin, request, queryset):
+    response = HttpResponse(content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="vouchers.csv"'
+
+    fieldnames = [
+        'msisdn', 'name', 'goal_item', 'goal_amount', 'balance', 
+        'total_2_week_streaks', 'total_4_week_streaks', 'total_6_week_streaks',
+        'total_quiz_awards'
+    ]
+
+    def user_mapping(user):
+        return [
+            user.msisdn, user.name, user.goal_item, user.goal_amount, user.balance(),
+            total_2_week_streaks(user), total_4_week_streaks(user),
+            total_6_week_streaks(user), total_quiz_awards(user)
+        ]
+
+    writer = csv.writer(response)
+    writer.writerow(fieldnames)
+    writer.writerows(map(user_mapping, queryset))
+    return response
+export_user_as_csv.short_description = "Export selected users as CSV"
+
 
 class UssdUserAdmin(admin.ModelAdmin):
     list_display = (
         'msisdn', 'name', 'goal_item', 'goal_amount', 'balance', 
-        'total_2_week_streaks', 'total_4_week_streaks', 'total_6_week_streaks',
-        'total_quiz_awards'
+        total_2_week_streaks, total_4_week_streaks, total_6_week_streaks,
+        total_quiz_awards
     )
-
-    def total_2_week_streaks(self, obj):
-        return obj.transaction_set.all()\
-            .filter(action=models.Transaction.REWARD)\
-            .filter(reference_code='streak-2')\
-            .count()
-
-    def total_4_week_streaks(self, obj):
-        return obj.transaction_set.all()\
-            .filter(action=models.Transaction.REWARD)\
-            .filter(reference_code='streak-4')\
-            .count()
-
-    def total_6_week_streaks(self, obj):
-        return obj.transaction_set.all()\
-            .filter(action=models.Transaction.REWARD)\
-            .filter(reference_code='streak-6')\
-            .count()
-
-    def total_quiz_awards(self, obj):
-        return obj.transaction_set.all()\
-            .filter(action=models.Transaction.QUIZ_PRIZE)\
-            .count()
+    actions = [export_user_as_csv]
 
 
 class QuestionInline(admin.StackedInline):
