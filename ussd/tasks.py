@@ -9,7 +9,9 @@ from celery.decorators import task
 from .airtime_api import pinless_recharge
 from .airtime_api import InsufficientBalance
 from .airtime_api import AirtimeApiError
-from .models import Transaction, Message
+from .models import Message
+from .models import UssdUser
+from .models import Transaction
 from .report import generate_report_data
 from .rewards import calculate_rewards
 from .rewards import calculate_rewards
@@ -22,6 +24,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class SmsSendError(Exception):
+    pass
+
 def send_junebug_sms(msisdn, content):
     # TODO - move this function
     url = settings.JUNEBUG_SMS_URL
@@ -31,7 +36,7 @@ def send_junebug_sms(msisdn, content):
     }
     resp = requests.post(url, data=json.dumps(data))
     if resp.status_code != 200:
-        raise Exception('Could not send SMS to {}'.format(msisdn))
+        raise SmsSendError('Could not send SMS to {}'.format(msisdn))
 
 
 @task(name="send_welcome_sms")
@@ -72,12 +77,17 @@ def send_messages():
         sent_at__isnull=True
     )
     for msg in messages:
-        try:
-            send_junebug_sms(msg.to, msg.body)
-            msg.sent_at = timezone.now()
-            msg.save()
-        except Exception as e:
-            logger.error('could not send message!')
+        if msg.to == '*':
+            to = [user.msisdn for user in UssdUser.objects.all()]
+        else:
+            to = msg.to.split(',')
+        for msisdn in to:
+            try:
+                send_junebug_sms(msisdn, msg.body)
+            except SmsSendError as e:
+                logger.error('could not send message (pk={0}) to {1}. !'.format(msg.pk, msisdn))
+        msg.sent_at = timezone.now()
+        msg.save()
 
 
 @task(name='calculate_weekly_streaks')
