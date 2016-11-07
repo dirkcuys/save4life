@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib import admin
 
+from charsleft_widget.widgets import CharsLeftInput
+
 from .models import Quiz
 from .models import Question
 from .models import UssdUser
@@ -15,7 +17,7 @@ class MessageAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(MessageAdminForm, self).__init__(*args, **kwargs)
-        self.fields['body'].widget = admin.widgets.AdminTextareaWidget()
+        self.fields['body'].widget = CharsLeftInput(attrs={'maxlength': 160})
 
 
 class VoucherGenerateForm(forms.Form):
@@ -68,7 +70,7 @@ class QuestionAdminForm(forms.ModelForm):
 
 
 class QuizAdminForm(forms.ModelForm):
-    reminder_text = forms.CharField(max_length=160, widget=admin.widgets.AdminTextareaWidget())
+    reminder_text = forms.CharField(max_length=160, widget=CharsLeftInput(attrs={'maxlength':160}))
     class Meta:
         model = Quiz
         exclude = ['reminder']
@@ -81,4 +83,4 @@ class QuizAdminForm(forms.ModelForm):
 
 
 class QuizAwardForm(forms.Form):
-    sms_text = forms.CharField(label='Text for prize SMS', max_length=160, widget=forms.Textarea)
+    sms_text = forms.CharField(label='Text for prize SMS', max_length=160, widget=CharsLeftInput(attrs={'maxlength':160}))
