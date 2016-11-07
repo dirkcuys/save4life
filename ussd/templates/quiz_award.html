@@ -1,4 +1,4 @@
-{% extends 'admin/base_site.html' %}
+{% extends 'admin/change_form.html' %}
 {% load i18n %}
 
 {% block breadcrumbs %}
@@ -12,14 +12,17 @@
 {% endblock %}
 
 {% block content %}
+<div id="content-main">
 
 <h2>Award quiz prize</h2>
 
-<p>Award prize for quiz {{quiz.pk}} to {{user.name}}. The users&quot; balance will be doubled from R{{user.balance}} to R{{user.balance|add:user.balance}}.
+<p>Award prize for quiz {{quiz.pk}} to {{user.name}}. The users&quot; balance will be doubled from R{{user.balance}} to R{{user.balance|add:user.balance}}.</p>
 
 <form action="" method="post" novalidate>
     {% csrf_token %}
 
+
+    <fieldset class="module aligned">
     {% for field in form %}
         <div class="form-row">
             <div>
@@ -28,8 +31,11 @@
             </div>
         </div>
     {% endfor %}
+    </fieldset>
 
     <div class="submit-row">
         <input type="submit" value="Award prize" class="default" name="_save" />
     </div>
+</form>
+</div>
 {% endblock %}

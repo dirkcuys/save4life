@@ -1,4 +1,4 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/change_form.html" %}
 {% load i18n admin_urls static admin_modify %}
 
 {% block breadcrumbs %}
@@ -11,25 +11,24 @@
 {% endblock %}
 
 {% block content %}
-<h1>Add vouchers</h1>
     <div id="content-main">
+    <h1>Add vouchers</h1>
 
-    <form action="" method="post" id="voucher_generate_form" novalidate>{% csrf_token %}{% block form_top %}{% endblock %}
-        <div>
-            <fieldset class="module aligned ">
-                {% for field in form %}
-                    <div class="form-row">
-                        <div>
-                        {{ field.errors }}
-                        {{ field.label_tag }} {{ field }}
-                        </div>
+    <form action="" method="post" id="voucher_generate_form" novalidate>
+        {% csrf_token %}
+        <fieldset class="module aligned ">
+            {% for field in form %}
+                <div class="form-row">
+                    <div>
+                    {{ field.errors }}
+                    {{ field.label_tag }} {{ field }}
                     </div>
-                {% endfor %}
-            </fieldset>
+                </div>
+            {% endfor %}
+        </fieldset>
 
-            <div class="submit-row">
-                <input type="submit" value="Generate" class="default" name="_save" />
-            </div>
+        <div class="submit-row">
+            <input type="submit" value="Generate" class="default" name="_save" />
         </div>
     </form>
 </div>
