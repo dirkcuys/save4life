@@ -92,7 +92,6 @@ def send_messages():
 
 @task(name='calculate_weekly_streaks')
 def calculate_weekly_streaks():
-    # TODO
     calculate_rewards()
 
 

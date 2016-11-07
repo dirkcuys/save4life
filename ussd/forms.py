@@ -4,13 +4,18 @@ from django.contrib import admin
 from .models import Quiz
 from .models import UssdUser
 
+def _to_choices(self):
+    return [('*','*')] + [(u.msisdn,u.msisdn) for u in UssdUser.objects.all()]
+
+
 class MessageAdminForm(forms.ModelForm):
 
-    to = forms.ChoiceField(choices=[('*','*')] + [(u.msisdn,u.msisdn) for u in UssdUser.objects.all()])
+    to = forms.ChoiceField(choices=_to_choices)
 
     def __init__(self, *args, **kwargs):
         super(MessageAdminForm, self).__init__(*args, **kwargs)
         self.fields['body'].widget = admin.widgets.AdminTextareaWidget()
+
 
     # TODO validate that all addresses in to field are registered users
 

@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.test import Client
 from django.utils import timezone
 
-from ussd.models import Voucher, UssdUser, Transaction
+from ussd.models import Voucher, UssdUser, Transaction, Message
 from ussd.rewards import calculate_rewards
 
 from datetime import datetime
@@ -78,6 +78,7 @@ class TestUssdApi(TestCase):
 
         self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 1)
         self.assertEquals(self.user.balance(), 25)
+        self.assertEquals(Message.objects.count(), 1)
 
         award_transaction = Transaction.objects.last()
         self.assertEquals(award_transaction.user, self.user)
@@ -501,5 +502,6 @@ class TestUssdApi(TestCase):
 
         self.assertEquals(Transaction.objects.filter(action=Transaction.REWARD).count(), 3)
         self.assertEquals(self.user.balance(), 92)
+        self.assertEquals(Message.objects.count(), 3)
 
 

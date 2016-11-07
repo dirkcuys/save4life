@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from .models import Transaction, UssdUser
+from .models import Transaction, UssdUser, Message
 
 from datetime import datetime, timedelta
 
@@ -39,5 +39,9 @@ def calculate_rewards():
         ]
         if all(conditions):
             streak = weeks//2 % 3
-            # TODO move transaction code somewhere central
             award_streak(user, weeks, streak_award[streak-1])
+            Message.objects.create(
+                to=user.msisdn,
+                body='Congratulations, you have received R{0} because you saved for {1} weeks in a row. Keep up the saving!'.format(streak_award[streak-1], weeks),
+                send_at=timezone.now()
+            )
