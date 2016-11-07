@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.db.models import Sum
 from django.db.models import F
+from django.db.models import Count
 
 from datetime import datetime, timedelta
 
@@ -17,6 +18,12 @@ class UssdUser(models.Model):
     pin = models.CharField(max_length=4, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __repr__(self):
+        return u"<UssdUser {0}>".format(self.msisdn)
+
+    def __unicode__(self):
+        return self.msisdn
 
     def to_dict(self):
         # Don't include PIN
@@ -93,9 +100,6 @@ class UssdUser(models.Model):
             return self.streak()
 
 
-    def __unicode__(self):
-        return u"UssdUser <{0}>".format(self.name)
-
 
 class Voucher(models.Model):
     code = models.CharField(max_length=16, unique=True)
@@ -152,6 +156,7 @@ class Transaction(models.Model):
 
 
 class Quiz(models.Model):
+    description = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     publish_at = models.DateTimeField()
     ends_at = models.DateTimeField()
@@ -167,6 +172,18 @@ class Quiz(models.Model):
         complete = Answer.objects.filter(user=user, question__quiz=self).count()
         correct = Answer.objects.filter(user=user, question__quiz=self, user_response=F('question__solution')).count()
         return (correct, complete)
+
+    def total_responses(self):
+        completed_qs = Answer.objects\
+            .filter(question__quiz=self)\
+            .values('user')\
+            .annotate(completed_questions=Count('pk'))\
+            .filter(completed_questions=self.question_set.count())
+        return completed_qs.count()
+
+
+    class Meta:
+        verbose_name_plural = "quizzes"
 
 
 class Question(models.Model):

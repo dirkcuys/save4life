@@ -13,8 +13,22 @@ from ussd.views import QuizAwardView
 from datetime import datetime
 import csv
 
+
+def export_as_csv(modeladmin, request, queryset):
+    response = HttpResponse(content_type="text/csv")
+    response['Content-Disposition'] = 'attachment; filename="vouchers.csv"'
+
+    values = queryset.values()
+    writer = csv.DictWriter(response, fieldnames=values[0].keys())
+    writer.writeheader()
+    writer.writerows(values)
+    return response
+export_as_csv.short_description = "Export selected objects as CSV"
+
+
 class UssdUserAdmin(admin.ModelAdmin):
     list_display = ('msisdn', 'name', 'goal_item', 'goal_amount', 'balance', 'streak')
+
 
 class QuestionInline(admin.TabularInline):
     model = models.Question
@@ -25,11 +39,15 @@ class QuestionInline(admin.TabularInline):
 
 class QuizAdmin(admin.ModelAdmin):
     inlines = [QuestionInline]
-    list_display = ('publish_at', 'ends_at', 'results')
+    list_display = ('description', 'publish_at', 'ends_at', 'total_responses','results', 'is_live')
+    actions = [export_as_csv]
 
     def results(self, obj):
         results_url = reverse('admin:quiz_results', args=(obj.pk,))
         return format_html('<a href="{0}">View results</a>', results_url)
+
+    def is_live(self, obj):
+        return obj.publish_at <= datetime.utcnow() < obj.ends_at
 
     def get_urls(self):
         urls = super(QuizAdmin, self).get_urls()
@@ -50,6 +68,7 @@ class MessageAdmin(admin.ModelAdmin):
     form = MessageAdminForm
     exclude = ('sent_at',)
     list_display = ('to', 'body', 'send_at', 'sent_at')
+    actions = [export_as_csv]
 
     # TODO this doesn't disable the link from the list
     def has_change_permission(self, request, obj=None):
@@ -57,44 +76,15 @@ class MessageAdmin(admin.ModelAdmin):
             return False
         return super(MessageAdmin, self).has_change_permission(request, obj=obj)
 
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.sent_at is not None:
+            return False
+        return super(MessageAdmin, self).has_delete_permission(request, obj=obj)
+
 
 def revoke_vouchers(modeladmin, request, queryset):
     queryset.update(revoked_at=datetime.utcnow())
 revoke_vouchers.short_description = "Revoke selected vouchers to prevent them from being used"
-
-
-def export_voucher_as_csv(modeladmin, request, queryset):
-    response = HttpResponse(content_type="text/csv")
-    response['Content-Disposition'] = 'attachment; filename="vouchers.csv"'
-
-    writer = csv.writer(response)
-    writer.writerow(['code', 'amount', 'redeemed_at', 'revoked_at', 'distributor', 'redeemed_by', 'created_at', 'updated_at'])
-    writer.writerows([
-        [ 
-            voucher.code,
-            voucher.amount,
-            voucher.redeemed_at,
-            voucher.revoked_at,
-            voucher.distributor,
-            voucher.redeemed_by,
-            voucher.created_at,
-            voucher.updated_at
-        ] for voucher in queryset 
-    ])
-    return response
-export_voucher_as_csv.short_description = "Export selected vouchers as CSV"
-
-
-def export_as_csv(modeladmin, request, queryset):
-    response = HttpResponse(content_type="text/csv")
-    response['Content-Disposition'] = 'attachment; filename="vouchers.csv"'
-
-    values = queryset.values()
-    writer = csv.DictWriter(response, fieldnames=values[0].keys())
-    writer.writeheader()
-    writer.writerows(values)
-    return response
-export_as_csv.short_description = "Export selected objects as CSV"
 
 
 class VoucherAdmin(admin.ModelAdmin):
@@ -139,6 +129,7 @@ class TransactionAdmin(admin.ModelAdmin):
         'created_at', 'user', 'action', 'reference_code', 'voucher', 'amount'
     ]
     list_display_links = None
+    actions = [export_as_csv]
 
     def get_actions(self, request):
         actions = super(TransactionAdmin, self).get_actions(request)

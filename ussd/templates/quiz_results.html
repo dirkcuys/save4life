@@ -11,60 +11,71 @@
 {% endblock %}
 
 {% block content %}
+
 <h1>Quiz results</h1>
 
 <div id="content-main">
+  {% block object-tools %}
+    <ul class="object-tools">
+      <li>
+        <a href="{% url 'admin:quiz_results' quiz.pk %}?format=csv">
+          {% blocktrans %}Export results{% endblocktrans %}
+        </a>
+      </li>
+    </ul>
+  {% endblock %}
+
   <div class="module" id="changelist">
     <div class="results">
-        <table id="result_list">
-            <thead>
-                <tr>
-                    <th scope="col"  class="action-checkbox-column">
-                       <div class="text"><span><input type="checkbox" id="action-toggle" /></span></div>
-                       <div class="clear"></div>
-                    </th>
-                    <th scope="col"  class="sortable column-publish_at">
-                       <div class="text"><a href="?o=1">User</a></div>
-                       <div class="clear"></div>
-                    </th>
-                    {% for question in quiz.question_set.all reversed %}
-                        <th scope="col" class="sortable column-{{forloop.counter}}">
-                            <div class="text"><a href="?o={{forloop.counter|add:1}}">Question {{forloop.counter}}<br/>{{question.question}}</a></div>
-                           <div class="clear"></div>
-                        </th>
-                    {% endfor %}
-                    <th scope="col"  class="sortable column-ends_at">
-                       <div class="text"><a href="?o=2">Score</a></div>
-                       <div class="clear"></div>
-                    </th>
-                     <th scope="col"  class="sortable column-award_prize">
-                       <div class="text"><a href="?o=2">Prize awarded</a></div>
-                       <div class="clear"></div>
-                    </th>
-                </tr>
-            </thead>
-        <tbody>
+      <table id="result_list">
+          <thead>
+              <tr>
+                  <!--th scope="col"  class="action-checkbox-column">
+                     <div class="text"><span><input type="checkbox" id="action-toggle" /></span></div>
+                     <div class="clear"></div>
+                  </th-->
+                  <th scope="col"  class="sortable column-publish_at">
+                     <div class="text"><a href="?o=1">User</a></div>
+                     <div class="clear"></div>
+                  </th>
+                  {% for question in quiz.question_set.all reversed %}
+                      <th scope="col" class="sortable column-{{forloop.counter}}">
+                          <div class="text"><a href="?o={{forloop.counter|add:1}}">Question {{forloop.counter}}<br/>{{question.question}}</a></div>
+                         <div class="clear"></div>
+                      </th>
+                  {% endfor %}
+                  <th scope="col"  class="sortable column-ends_at">
+                     <div class="text"><a href="?o=2">Score</a></div>
+                     <div class="clear"></div>
+                  </th>
+                   <th scope="col"  class="sortable column-award_prize">
+                     <div class="text"><a href="?o=2">Prize awarded</a></div>
+                     <div class="clear"></div>
+                  </th>
+              </tr>
+          </thead>
+      <tbody>
 
-        {% for user_result in user_results %}
-            <tr class="row{% cycle '1' '2' %}">
-                <td class="action-checkbox"><input class="action-select" name="_selected_action" type="checkbox" value="{{user_result.user.msisdn}}" /></td>
-                <th class="field-publish_at nowrap">{{user_result.user.msisdn}}</th>
-                {% for answer in user_result.answers %}
-                    <td class="nowrap">{{answer.response_text}}</td>
-                {% endfor %}
+      {% for user_result in user_results %}
+        <tr class="row{% cycle '1' '2' %}">
+          <!--td class="action-checkbox"><input class="action-select" name="_selected_action" type="checkbox" value="{{user_result.user.msisdn}}" /></td-->
+          <th class="field-publish_at nowrap">{{user_result.user.msisdn}}</th>
+          {% for answer in user_result.answers %}
+              <td class="nowrap">{{answer.response_text}}</td>
+          {% endfor %}
 
-                <td class="field-ends_at nowrap">{{user_result.correct}}/{{user_result.total}}</td>
-                <td class="field-award-prize">
-                    {% if user_result.prize_awarded %}yes{% else %}
-                    <a href="{% url 'admin:quiz_award' quiz.id user_result.user.msisdn %}">
-                        Award prize
-                    </a>
-                    {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-        </table>
+          <td class="field-ends_at nowrap">{{user_result.correct}}/{{user_result.total}}</td>
+          <td class="field-award-prize">
+              {% if user_result.prize_awarded %}yes{% else %}
+              <a href="{% url 'admin:quiz_award' quiz.id user_result.user.msisdn %}">
+                  Award prize
+              </a>
+              {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      </table>
     </div>
   </div>
 </div>
