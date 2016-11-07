@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 
 from .models import Quiz
+from .models import Question
 from .models import UssdUser
 
 def _to_choices(self):
@@ -17,15 +18,53 @@ class MessageAdminForm(forms.ModelForm):
         self.fields['body'].widget = admin.widgets.AdminTextareaWidget()
 
 
-    # TODO validate that all addresses in to field are registered users
-
-
 class VoucherGenerateForm(forms.Form):
     
     vouchers_10 = forms.IntegerField(label='R10 vouchers', min_value=0, initial=0)
     vouchers_20 = forms.IntegerField(label='R20 vouchers', min_value=0, initial=0)
     vouchers_50 = forms.IntegerField(label='R50 vouchers', min_value=0, initial=0)
     distributor = forms.CharField(max_length=128)
+
+
+class SplitOptionsWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        widgets = (
+            forms.TextInput(attrs=attrs),
+            forms.TextInput(attrs=attrs),
+            forms.TextInput(attrs=attrs),
+            forms.TextInput(attrs=attrs),
+        )
+        super(SplitOptionsWidget, self).__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            return value.split(',')
+        return [None, None, None, None]
+
+
+class OptionsField(forms.MultiValueField):
+    widget = SplitOptionsWidget
+    def __init__(self, *args, **kwargs):
+        fields = (
+            forms.CharField(max_length=32, label='Option 1'),
+            forms.CharField(max_length=32, label='Option 1'),
+            forms.CharField(max_length=32, label='Option 1'),
+            forms.CharField(max_length=32, label='Option 1'),
+        )
+        super(OptionsField, self).__init__(fields, *args, **kwargs)
+
+    def compress(self, data_list):
+        return ','.join(data_list)
+
+
+class QuestionAdminForm(forms.ModelForm):
+
+    options = OptionsField()
+    solution = forms.ChoiceField(choices=[(i, 'Option {}'.format(i+1)) for i in range(4)])
+
+    class Meta:
+        model = Question
+        fields = '__all__'
 
 
 class QuizAdminForm(forms.ModelForm):

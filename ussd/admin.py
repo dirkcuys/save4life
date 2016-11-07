@@ -9,6 +9,7 @@ from django.utils import timezone
 from ussd import models
 from ussd.forms import MessageAdminForm
 from ussd.forms import QuizAdminForm
+from ussd.forms import QuestionAdminForm
 from ussd.views import generate_vouchers
 from ussd.views import QuizResultsView
 from ussd.views import QuizAwardView
@@ -32,8 +33,9 @@ class UssdUserAdmin(admin.ModelAdmin):
     list_display = ('msisdn', 'name', 'goal_item', 'goal_amount', 'balance', 'streak')
 
 
-class QuestionInline(admin.TabularInline):
+class QuestionInline(admin.StackedInline):
     model = models.Question
+    form = QuestionAdminForm
     max_num = 4
     min_num = 4
     can_delete = False
@@ -53,6 +55,7 @@ class QuizAdmin(admin.ModelAdmin):
         return obj.publish_at <= timezone.now() < obj.ends_at
 
     def save_model(self, request, obj, form, change):
+        super(QuizAdmin, self).save_model(request, obj, form, change)
         if change == False:
             obj.reminder = models.Message.objects.create(
                 to='*',
