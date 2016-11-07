@@ -54,9 +54,8 @@ class QuizAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if change == False:
-            to = '*'
-            obj.reminder = Message.objects.create(
-                to=to,
+            obj.reminder = models.Message.objects.create(
+                to='*',
                 body=form.cleaned_data['reminder_text'],
                 send_at=obj.publish_at
             )

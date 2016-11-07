@@ -2,8 +2,11 @@ from django import forms
 from django.contrib import admin
 
 from .models import Quiz
+from .models import UssdUser
 
 class MessageAdminForm(forms.ModelForm):
+
+    to = forms.ChoiceField(choices=[('*','*')] + [(u.msisdn,u.msisdn) for u in UssdUser.objects.all()])
 
     def __init__(self, *args, **kwargs):
         super(MessageAdminForm, self).__init__(*args, **kwargs)
@@ -28,8 +31,9 @@ class QuizAdminForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super(QuizAdminForm, self).__init__(*args, **kwargs)  
-        instance = kwargs['instance']
-        self.fields['reminder_text'].initial = instance.reminder.body
+        instance = kwargs.get('instance')
+        if not instance is None:
+            self.fields['reminder_text'].initial = instance.reminder.body
 
 
 class QuizAwardForm(forms.Form):
