@@ -336,20 +336,16 @@ class QuizResultsView(DetailView):
         context = self.get_context_data(**kwargs)
         response = http.HttpResponse(content_type="text/csv")
         response['Content-Disposition'] = 'attachment; filename="vouchers.csv"'
-        field_names = ['user']
+        field_names = ['msisdn', 'name']
         field_names += [q.question for q in self.object.question_set.order_by('pk')]
         field_names += ['correct', 'total', 'prize_awarded']
         writer = csv.writer(response)
         writer.writerow(field_names)
         for res in context['user_results']:
             writer.writerow(
-                [res['user'].msisdn]
+                [res['user'].msisdn, res['user'].name]
                 + [a.response_text() for a in res['answers'] ]
-                + [
-                    res['correct'],
-                    res['total'],
-                    res['prize_awarded']
-                ]
+                + [ res['correct'], res['total'], res['prize_awarded'] ]
             )
         return response
 

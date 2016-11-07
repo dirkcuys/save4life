@@ -35,7 +35,11 @@
                      <div class="clear"></div>
                   </th-->
                   <th scope="col"  class="sortable column-publish_at">
-                     <div class="text"><a href="?o=1">User</a></div>
+                     <div class="text"><a href="?o=1">MSISDN</a></div>
+                     <div class="clear"></div>
+                  </th>
+                  <th scope="col"  class="sortable column-publish_at">
+                     <div class="text"><a href="?o=1">Name</a></div>
                      <div class="clear"></div>
                   </th>
                   {% for question in quiz.question_set.all reversed %}
@@ -60,6 +64,7 @@
         <tr class="row{% cycle '1' '2' %}">
           <!--td class="action-checkbox"><input class="action-select" name="_selected_action" type="checkbox" value="{{user_result.user.msisdn}}" /></td-->
           <th class="field-publish_at nowrap">{{user_result.user.msisdn}}</th>
+          <td class="nowrap">{{user_result.user.name}}</td>
           {% for answer in user_result.answers %}
               <td class="nowrap">{{answer.response_text}}</td>
           {% endfor %}
