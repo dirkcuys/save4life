@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib import messages
 from django.conf.urls import url
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
@@ -7,6 +8,7 @@ from django.utils import timezone
 
 from ussd import models
 from ussd.forms import MessageAdminForm
+from ussd.forms import QuizAdminForm
 from ussd.views import generate_vouchers
 from ussd.views import QuizResultsView
 from ussd.views import QuizAwardView
@@ -39,8 +41,9 @@ class QuestionInline(admin.TabularInline):
 
 class QuizAdmin(admin.ModelAdmin):
     inlines = [QuestionInline]
-    list_display = ('description', 'publish_at', 'ends_at', 'total_responses','results', 'is_live')
+    list_display = ('name', 'description', 'publish_at', 'ends_at', 'total_responses','results', 'is_live')
     actions = [export_as_csv]
+    form = QuizAdminForm
 
     def results(self, obj):
         results_url = reverse('admin:quiz_results', args=(obj.pk,))
@@ -48,6 +51,25 @@ class QuizAdmin(admin.ModelAdmin):
 
     def is_live(self, obj):
         return obj.publish_at <= timezone.now() < obj.ends_at
+
+    def save_model(self, request, obj, form, change):
+        if change == False:
+            to = '*'
+            obj.reminder = Message.objects.create(
+                to=to,
+                body=form.cleaned_data['reminder_text'],
+                send_at=obj.publish_at
+            )
+            obj.save()
+        else:
+            # check to see if we've already sent the reminder
+            if obj.reminder.sent_at is None:
+                obj.reminder.body = form.cleaned_data['reminder_text']
+                obj.send_at = obj.publish_at
+                obj.reminder.save()
+            elif obj.reminder.body != form.cleaned_data['reminder_text']:
+                # warn user that quiz reminder has been sent already
+                self.message_user(request, 'The reminder SMS has already been sent', level=messages.WARNING)
 
     def get_urls(self):
         urls = super(QuizAdmin, self).get_urls()

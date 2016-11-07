@@ -113,7 +113,10 @@ class Voucher(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
-        return u'Voucher <R{0}>'.format(self.amount)
+        return u'R{0} voucher'.format(self.amount)
+    
+    def __repr__(self):
+        return u'<Voucher R{0}>'.format(self.amount)
 
 
 def generate_voucher(amount, distributor):
@@ -156,8 +159,17 @@ class Transaction(models.Model):
         return u'Transaction <{0}: R{1}>'.format(self.action, self.amount)
 
 
+class Message(models.Model):
+    to = models.CharField(max_length=1024)  # Store comma seperated list of msisdns
+    body = models.CharField(max_length=160)
+    send_at = models.DateTimeField()
+    sent_at = models.DateTimeField(blank=True, null=True)
+
+
 class Quiz(models.Model):
+    name = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
+    reminder = models.ForeignKey(Message, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     publish_at = models.DateTimeField()
     ends_at = models.DateTimeField()
@@ -215,10 +227,3 @@ class Answer(models.Model):
         return self.question.options.split(',')[self.user_response]
 
     # TODO set user and question as unique together
-
-
-class Message(models.Model):
-    to = models.CharField(max_length=1024)  # Store comma seperated list of msisdns
-    body = models.CharField(max_length=160)
-    send_at = models.DateTimeField()
-    sent_at = models.DateTimeField(blank=True, null=True)

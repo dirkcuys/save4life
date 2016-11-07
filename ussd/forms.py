@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib import admin
 
+from .models import Quiz
+
 class MessageAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
@@ -16,6 +18,18 @@ class VoucherGenerateForm(forms.Form):
     vouchers_20 = forms.IntegerField(label='R20 vouchers', min_value=0, initial=0)
     vouchers_50 = forms.IntegerField(label='R50 vouchers', min_value=0, initial=0)
     distributor = forms.CharField(max_length=128)
+
+
+class QuizAdminForm(forms.ModelForm):
+    reminder_text = forms.CharField(max_length=160, widget=admin.widgets.AdminTextareaWidget())
+    class Meta:
+        model = Quiz
+        exclude = ['reminder']
+    
+    def __init__(self, *args, **kwargs):
+        super(QuizAdminForm, self).__init__(*args, **kwargs)  
+        instance = kwargs['instance']
+        self.fields['reminder_text'].initial = instance.reminder.body
 
 
 class QuizAwardForm(forms.Form):
