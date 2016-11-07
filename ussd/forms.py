@@ -5,7 +5,7 @@ from .models import Quiz
 from .models import Question
 from .models import UssdUser
 
-def _to_choices(self):
+def _to_choices():
     return [('*','*')] + [(u.msisdn,u.msisdn) for u in UssdUser.objects.all()]
 
 

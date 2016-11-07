@@ -30,7 +30,34 @@ export_as_csv.short_description = "Export selected objects as CSV"
 
 
 class UssdUserAdmin(admin.ModelAdmin):
-    list_display = ('msisdn', 'name', 'goal_item', 'goal_amount', 'balance', 'streak')
+    list_display = (
+        'msisdn', 'name', 'goal_item', 'goal_amount', 'balance', 
+        'total_2_week_streaks', 'total_4_week_streaks', 'total_6_week_streaks',
+        'total_quiz_awards'
+    )
+
+    def total_2_week_streaks(self, obj):
+        return obj.transaction_set.all()\
+            .filter(action=models.Transaction.REWARD)\
+            .filter(reference_code='streak-2')\
+            .count()
+
+    def total_4_week_streaks(self, obj):
+        return obj.transaction_set.all()\
+            .filter(action=models.Transaction.REWARD)\
+            .filter(reference_code='streak-4')\
+            .count()
+
+    def total_6_week_streaks(self, obj):
+        return obj.transaction_set.all()\
+            .filter(action=models.Transaction.REWARD)\
+            .filter(reference_code='streak-6')\
+            .count()
+
+    def total_quiz_awards(self, obj):
+        return obj.transaction_set.all()\
+            .filter(action=models.Transaction.QUIZ_PRIZE)\
+            .count()
 
 
 class QuestionInline(admin.StackedInline):
