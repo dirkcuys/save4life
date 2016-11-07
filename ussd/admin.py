@@ -3,6 +3,7 @@ from django.conf.urls import url
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.utils.html import format_html
+from django.utils import timezone
 
 from ussd import models
 from ussd.forms import MessageAdminForm
@@ -10,7 +11,6 @@ from ussd.views import generate_vouchers
 from ussd.views import QuizResultsView
 from ussd.views import QuizAwardView
 
-from datetime import datetime
 import csv
 
 
@@ -47,7 +47,7 @@ class QuizAdmin(admin.ModelAdmin):
         return format_html('<a href="{0}">View results</a>', results_url)
 
     def is_live(self, obj):
-        return obj.publish_at <= datetime.utcnow() < obj.ends_at
+        return obj.publish_at <= timezone.now() < obj.ends_at
 
     def get_urls(self):
         urls = super(QuizAdmin, self).get_urls()
@@ -83,7 +83,7 @@ class MessageAdmin(admin.ModelAdmin):
 
 
 def revoke_vouchers(modeladmin, request, queryset):
-    queryset.update(revoked_at=datetime.utcnow())
+    queryset.update(revoked_at=timezone.now())
 revoke_vouchers.short_description = "Revoke selected vouchers to prevent them from being used"
 
 

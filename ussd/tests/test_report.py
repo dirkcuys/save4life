@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.utils import timezone
+from django.utils.timezone import utc
 
 from ussd.models import Voucher
 from ussd.models import Transaction
@@ -40,8 +41,8 @@ class TestReport(TestCase):
 
         # create a quiz
         self.quiz = Quiz.objects.create(
-            publish_at=datetime(2016,10,31),
-            ends_at=datetime(2016,11,6)
+            publish_at=datetime(2016,10,31).replace(tzinfo=utc),
+            ends_at=datetime(2016,11,6).replace(tzinfo=utc)
         )
 
         self.question = [

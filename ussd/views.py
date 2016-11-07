@@ -11,7 +11,6 @@ from django.db.models import Count
 
 import json
 import csv
-from datetime import datetime
 
 from .models import UssdUser
 from .models import Voucher
@@ -384,7 +383,7 @@ class QuizAwardView(SingleObjectMixin, FormView):
         Message.objects.create(
             to=user.msisdn,
             body=message_text,
-            send_at=datetime.utcnow()
+            send_at=timezone.now()
         )
         # award prize
         award_quiz_prize(user, quiz)

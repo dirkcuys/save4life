@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.test import Client
 from django.utils import timezone
+from django.utils.timezone import utc
 from django.contrib.auth.models import User
 
 from ussd.models import Transaction
@@ -34,8 +35,8 @@ class TestQuizPrize(TestCase):
 
         # create a quiz
         self.quiz = Quiz.objects.create(
-            publish_at=datetime(2016,10,31),
-            ends_at=datetime(2016,11,6)
+            publish_at=datetime(2016,10,31).replace(tzinfo=utc),
+            ends_at=datetime(2016,11,6).replace(tzinfo=utc)
         )
 
         self.questions = [

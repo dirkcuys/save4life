@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from .models import Transaction
 from .tasks import issue_airtime
 
@@ -42,7 +44,7 @@ def redeem_voucher(voucher, user, savings_amount):
     if savings_amount > voucher.amount or savings_amount < 0:
         raise TransactionError('Invalid savings amount')
 
-    voucher.redeemed_at = datetime.utcnow()
+    voucher.redeemed_at = timezone.now()
     voucher.redeemed_by = user
     voucher.save()
 

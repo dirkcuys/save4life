@@ -1,6 +1,5 @@
 from django.test import TestCase
 from django.test import Client
-from django.utils import timezone
 
 from ussd.models import Voucher, UssdUser, Transaction, Message
 from ussd.tasks import issue_airtime

@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Sum
 from django.db.models import F
 from django.db.models import Count
+from django.utils import timezone
 
 from datetime import datetime, timedelta
 
@@ -56,7 +57,7 @@ class UssdUser(models.Model):
 
     def streak(self):
         """ number of weeks consecutively saved"""
-        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today - timedelta(days=today.weekday()+7)
         savings = self.transaction_set.filter(
             action=Transaction.SAVING,
@@ -81,7 +82,7 @@ class UssdUser(models.Model):
 
     def current_streak(self):
         """ counts this week if user saved this week """
-        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today - timedelta(days=today.weekday())
         savings = self.transaction_set.filter(
             action=Transaction.SAVING,

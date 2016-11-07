@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.test import Client
+from django.utils.timezone import utc
 
 from ussd.models import Voucher, UssdUser
 from ussd.models import Quiz, Question, Answer
@@ -20,8 +21,8 @@ class TestUssdQuizApi(TestCase):
             goal_amount=50
         )
         self.quiz = Quiz.objects.create(
-            publish_at=datetime(2016, 5, 1),
-            ends_at=datetime(2016, 5, 8, 23, 59)
+            publish_at=datetime(2016, 5, 1).replace(tzinfo=utc),
+            ends_at=datetime(2016, 5, 8, 23, 59).replace(tzinfo=utc)
         )
         self.questions = [
             Question.objects.create(

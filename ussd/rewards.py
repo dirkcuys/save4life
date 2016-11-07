@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from .models import Transaction, UssdUser
 
 from datetime import datetime, timedelta
@@ -13,7 +15,7 @@ def calculate_rewards():
     # TODO move streak_award somewhere else and finalize amounts
     streak_award = [5, 7, 10]
 
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today - timedelta(days=today.weekday()+7)
 
     # get all users who saved in the previous week

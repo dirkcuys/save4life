@@ -2,6 +2,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from celery.decorators import task
 
@@ -15,7 +16,7 @@ from .rewards import calculate_rewards
 
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ def issue_airtime(transaction):
         Message.objects.create(
             to=transaction.user.msisdn,
             body=message_text,
-            send_at=datetime.utcnow()
+            send_at=timezone.now()
         )
     except InsufficientBalance as e:
         logger.error('Account balance not sufficient to issue airtime!')
@@ -67,13 +68,13 @@ def issue_airtime(transaction):
 @task(name='send_messages')
 def send_messages():
     messages = Message.objects.filter(
-        send_at__lte=datetime.utcnow(),
+        send_at__lte=timezone.now(),
         sent_at__isnull=True
     )
     for msg in messages:
         try:
             send_junebug_sms(msg.to, msg.body)
-            msg.sent_at = datetime.utcnow()
+            msg.sent_at = timezone.now()
             msg.save()
         except Exception as e:
             logger.error('could not send message!')
@@ -91,7 +92,7 @@ def send_weekly_report():
     Send report for activity during the previous week.
     Make sure this task runs weekly after the task to calculate rewards has run
     """
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
     last_week_start = today - timedelta(days=today.weekday()+7)
     last_week_end = today - timedelta(days=today.weekday())
 

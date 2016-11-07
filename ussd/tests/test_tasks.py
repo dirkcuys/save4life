@@ -1,5 +1,5 @@
 from django.test import TestCase
-from django.utils import timezone
+from django.utils.timezone import utc
 
 from ussd.models import Message
 from ussd.tasks import send_messages, send_junebug_sms
@@ -17,7 +17,7 @@ class TestTasks(TestCase):
 
     @patch('ussd.tasks.send_junebug_sms')
     def test_send_messages(self, send_junebug_sms):
-        Message.objects.create(to='27731231234', body='Test', send_at=datetime(2016, 6, 1, 12, 0))
+        Message.objects.create(to='27731231234', body='Test', send_at=datetime(2016, 6, 1, 12, 0).replace(tzinfo=utc))
         with freeze_time('2016-06-01 11:59') as moment:
             send_messages()
             self.assertFalse(send_junebug_sms.called)
@@ -29,7 +29,7 @@ class TestTasks(TestCase):
 
     @patch('ussd.tasks.send_junebug_sms')
     def test_dont_resend_messages(self, send_junebug_sms):
-        Message.objects.create(to='27731231234', body='Test', send_at=datetime(2016, 6, 1, 12, 0), sent_at=datetime(2016, 6, 1, 12, 1))
+        Message.objects.create(to='27731231234', body='Test', send_at=datetime(2016, 6, 1, 12, 0).replace(tzinfo=utc), sent_at=datetime(2016, 6, 1, 12, 1).replace(tzinfo=utc))
         with freeze_time('2016-06-01 12:02') as moment:
             send_messages()
             self.assertFalse(send_junebug_sms.called)
