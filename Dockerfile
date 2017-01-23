@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
     python \
     python-dev \
     python-virtualenv \
-    supervisor
+    supervisor \
+    redis-server
 
 # Setup application
 COPY requirements.txt /app/
