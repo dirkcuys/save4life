@@ -3,6 +3,8 @@ Save4Life API and admin interface
 
 This API provides the back-end for the Save4Life USSD interface. It also include a admin interface that can be used to create quizzes, generate vouchers and see other information related to users and transactions.
 
+If you are looking to setup the whole Save4Life application, please see documentation [here](https://github.com/dirkcuys/save4life-vumi)
+
 # Running the API
 
 ## Docker image
